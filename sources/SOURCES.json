@@ -1,0 +1,77 @@
+{
+  "format": 1,
+  "state": "Pinned modified baseline source. Apply the current port patch sequence and platform files through port/build-xbox2.sh, including frame-skip, Win32 named-directory handling and the separate 0.75x scale decoder.",
+  "upstream": {
+    "source": {
+      "url": "https://github.com/rfandango/hakuX.git",
+      "commit": "e11ee60b90742a368a08f7f5339af10048a63a04"
+    },
+    "source/external/fex": {
+      "url": "https://github.com/rfandango/FEX.git",
+      "commit": "52018bf46a8279b22bce738548ab3f40db467064"
+    },
+    "deps/volk": {
+      "url": "https://github.com/zeux/volk",
+      "commit": "0b17a763ba5643e32da1b2152f8140461b3b7345"
+    },
+    "deps/glslang": {
+      "url": "https://github.com/KhronosGroup/glslang",
+      "commit": "b5782e52ee2f7b3e40bb9c80d15b47016e008bc9"
+    },
+    "deps/spirv_reflect": {
+      "url": "https://github.com/KhronosGroup/SPIRV-Reflect",
+      "commit": "ef913b3ab3da1becca3cf46b15a10667c67bebe5"
+    },
+    "deps/vma": {
+      "url": "https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator",
+      "commit": "1d8f600fd424278486eade7ed3e877c99f0846b1"
+    },
+    "deps/root/subprojects/nv2a_vsh_cpu": {
+      "url": "https://github.com/xemu-project/nv2a_vsh_cpu",
+      "commit": "561fe80da57a881f89000256b459440c0178a7ce"
+    },
+    "deps/SDL2": {
+      "url": "https://github.com/libsdl-org/SDL.git",
+      "commit": "79ec168f3c1e2fe27335cb8886439f7ef676fb49"
+    },
+    "deps/zlib": {
+      "url": "https://github.com/madler/zlib.git",
+      "commit": "51b7f2abdade71cd9bb0e7a373ef2610ec6f9daf"
+    },
+    "deps/Vulkan-Headers": {
+      "url": "https://github.com/KhronosGroup/Vulkan-Headers.git",
+      "commit": "6802bb4733b63ed5efd3adb308a6c885ef180ea1"
+    }
+  },
+  "archives": [
+    {
+      "file": "hakux-patched.tar.gz",
+      "sha256": "09d8298496a409763d64b227852363e56e2d7f3e6ac795403979ee4a422a5e18",
+      "archive_bytes": 8684483,
+      "source_files": 492,
+      "expanded_bytes": 29544279
+    },
+    {
+      "file": "fex-patched.tar.gz",
+      "sha256": "0cd50dc24a89097fa24cb2c2f8eb9e4b6763414eb55ad16ddcb106422f057fe6",
+      "archive_bytes": 6175849,
+      "source_files": 6948,
+      "expanded_bytes": 40251664
+    },
+    {
+      "file": "sdl2-source.tar.gz",
+      "sha256": "e293ed6c0acc8ea6a1eef2210f128602b44001f669bd6868829f0e2a92643625",
+      "archive_bytes": 7576310,
+      "source_files": 1755,
+      "expanded_bytes": 78679486
+    },
+    {
+      "file": "dependencies.tar.gz",
+      "sha256": "75f5bbffb6c71406a9c7d01a148277ca77da0aa806206ad8dffe011af67620ff",
+      "archive_bytes": 10313899,
+      "source_files": 4241,
+      "expanded_bytes": 97943717
+    }
+  ],
+  "not_bundled": "System SDL2 shared library; use the target firmware library for linking. Vendor Vulkan driver remains on device."
+}

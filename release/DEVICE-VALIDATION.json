@@ -1,0 +1,25 @@
+{
+  "core_sha256": "04b9f20f6de5cc481ed0b15e8311fadde49cb3422277131cc9d80bf5dadf6a55",
+  "hardware": "Original TrimUI Smart Pro TG5040",
+  "tests": {
+    "exact_pre_fps_core_restored": true,
+    "halo_ce_startup": true,
+    "fps_menu_option_absent": true,
+    "controller_mapping_menu_display": true,
+    "render_scale_preserved_05": true,
+    "physical_start_select_exit": true
+  },
+  "limits": [
+    "No new FPS benchmark or long-session gameplay validation",
+    "All 16 default input actions verified on host; installer contains no saved mappings or settings",
+    "Automatic swap creation on a fresh physical device remains unverified"
+  ],
+  "configuration": {
+    "automatic_ui_release": true,
+    "menu_toggle": false,
+    "fps_overlay": false,
+    "controller_mapping": true,
+    "scale": 0.5
+  },
+  "prior_device_tested_core": "release/known-working-named-directory/DEVICE-VALIDATION.json"
+}

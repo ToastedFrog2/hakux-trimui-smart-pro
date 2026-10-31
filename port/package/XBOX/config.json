@@ -1,0 +1,12 @@
+{
+  "label": "Xbox (hakuX)",
+  "icon": "icon.png",
+  "iconsmall": "icon.png",
+  "launch": "launch.sh",
+  "rompath": "../../Roms/XBOX",
+  "imgpath": "../../Imgs/XBOX",
+  "useswap": 0,
+  "shortname": 0,
+  "hidebios": 1,
+  "extlist": "iso|xiso|sqfs"
+}

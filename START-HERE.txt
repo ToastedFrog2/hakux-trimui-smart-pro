@@ -1,0 +1,24 @@
+To test on a new SD card:
+
+1. Prepare the card with working TrimUI Smart Pro TG5040 firmware first.
+2. Open release/xbox-trimui-smart-pro-2026.10.30.zip inside this folder.
+3. Extract its Data and Emus folders into the SD card root, merging folders.
+4. Put your own Xbox images in Roms/XBOX. ISO, XISO and SQFS are supported.
+5. Safely eject the card, boot the handheld, and select Xbox.
+
+The GitHub upload ZIP is the repository bundle, not a bootable SD-card image.
+Only the inner install ZIP's Data and Emus folders go onto the card.
+
+Fresh installs use 0.5x scale. Menu opens settings and Controller Mapping.
+Hold physical Start + Select about 1.2 seconds to exit. MainUI and OSD close
+automatically during games and return on exit. Automatic 512 MiB swap uses
+internal ext4 if eligible; requires writable internal ext4 and at least 1 GiB free before allocation.
+Create Data/ports/hakux/disable-swap to opt out of automatic setup.
+No games, saves, caches, BIOS, credentials or personal device files are included.
+
+This is experimental software. Game-specific crashes, missing/black textures
+and slowdowns remain possible. See docs/COMPATIBILITY.md.
+
+No saved mappings or settings are bundled. L3/R3 default to Xbox stick clicks.
+An existing app folder keeps its settings: use Controller Mapping > Reset
+to defaults to clear an old custom layout.

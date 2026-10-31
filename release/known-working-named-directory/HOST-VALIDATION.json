@@ -1,0 +1,15 @@
+{
+  "core_sha256": "0fa36241953deff7755ff570f99b7ef5a43171fda540b059b365f7df6c602e6a",
+  "build": "named-directory-1",
+  "device_tested": true,
+  "rendering": "all guest rendering preserved; alternate unique display fronts skipped when selected",
+  "host_tests": {
+    "menu": "Prior ASan/UBSan actual menu checks; menu source unchanged",
+    "presenter": "Prior ASan/UBSan actual presenter integration checks; presenter source unchanged",
+    "build_patch_rerun": "Actual full patch sequence run twice; identical source hashes; one guarded Halo override table",
+    "named_directory": "ASan/UBSan actual NtCreateEvent, NtCreateSemaphore, NtCreateMutant and object manager: Win32 pseudo-root, absolute aliases, namespace isolation, case/type rules, open-if state preservation, invalid roots and name length bounds"
+  },
+  "prior_core_retained": "release/known-working",
+  "swap_setup_host_cases": 24,
+  "matching_compiled_source_files": 7440
+}

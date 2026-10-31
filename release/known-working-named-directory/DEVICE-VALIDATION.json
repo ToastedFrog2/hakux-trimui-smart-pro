@@ -1,0 +1,19 @@
+{
+  "core_sha256": "0fa36241953deff7755ff570f99b7ef5a43171fda540b059b365f7df6c602e6a",
+  "hardware": "Original TrimUI Smart Pro TG5040",
+  "render_scale": 0.5,
+  "tests": {
+    "halo_ce_startup_passed": true,
+    "halo_ce_first_campaign_map_loading_reached": true,
+    "san_andreas_named_semaphore_error_resolved": true,
+    "san_andreas_progressed_into_loading": true,
+    "san_andreas_gameplay_confirmed": true,
+    "san_andreas_controls_user_confirmed": true
+  },
+  "limits": [
+    "Long-session reliability and full campaign compatibility unverified",
+    "Frame-skip speedup unmeasured",
+    "Halo rendering glitches remain unresolved"
+  ],
+  "saves_and_existing_settings_preserved": true
+}
