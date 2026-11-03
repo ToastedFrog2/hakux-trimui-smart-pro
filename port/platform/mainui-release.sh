@@ -1,5 +1,7 @@
 #!/bin/sh
-# Automatic MainUI + OSD release for an Xbox launch; no firmware edits.
+# Automatic MainUI + OSD + music service release for an Xbox launch; no firmware edits.
+# musicserver busy-polls the OSD's widget pipe once the OSD is gone (~1.5 cores
+# observed in Halo 2): it is paused for the game and resumed after the OSD.
 hakux_process_start() { awk '{print $22}' "/proc/$1/stat" 2>/dev/null; }
 hakux_osd_alive() {
     for osd_check in $(pidof trimui_osdd 2>/dev/null); do
@@ -23,6 +25,14 @@ hakux_mainui_restore() {
                 sleep .1
             done
         fi
+    fi
+    # Only the musicservers this session paused (pid:start), once
+    if [ -r /tmp/hakux-ui-owner.music ]; then
+        for music_entry in $(cat /tmp/hakux-ui-owner.music); do
+            music_pid=${music_entry%%:*}
+            [ "$(hakux_process_start "$music_pid")" != "${music_entry#*:}" ] || kill -CONT "$music_pid" 2>/dev/null || :
+        done
+        rm -f /tmp/hakux-ui-owner.music
     fi
     if [ -n "${HAKUX_MAINUI_SUPERVISOR:-}" ] &&
        [ "$(cat /tmp/hakux-ui-owner 2>/dev/null)" = "$HAKUX_UI_TOKEN" ] &&
@@ -88,6 +98,17 @@ hakux_mainui_apply() {
             for candidate in $(pidof trimui_osdd 2>/dev/null); do
                 [ "$(readlink "/proc/$candidate/exe" 2>/dev/null)" != "$HAKUX_OSD_EXE" ] || kill -KILL "$candidate" 2>/dev/null || :
             done
+        fi
+        music_paused=""
+        for candidate in $(pidof musicserver 2>/dev/null); do
+            [ "$(awk '/^State:/ {print $2}' "/proc/$candidate/status" 2>/dev/null)" != T ] || continue
+            candidate_start=$(hakux_process_start "$candidate")
+            [ -n "$candidate_start" ] && kill -STOP "$candidate" 2>/dev/null || continue
+            music_paused="$music_paused $candidate:$candidate_start"
+        done
+        if [ -n "$music_paused" ]; then
+            printf '%s\n' $music_paused > /tmp/hakux-ui-owner.music
+            echo "hakuX RAM: musicserver paused for the game; resumes after exit" >> "$APP/log.txt"
         fi
         return 0
     done

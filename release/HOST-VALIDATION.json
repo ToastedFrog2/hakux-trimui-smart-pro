@@ -17,5 +17,18 @@
   "swap_setup_host_cases": 24,
   "matching_compiled_source_files": 7440,
   "device_smoke_tested": true,
-  "device_smoke_scope": "Exact pre-FPS core restored; Halo CE launch and menu without Show FPS verified; controller mapping and scale preserved"
+  "device_smoke_scope": "Exact pre-FPS core restored; Halo CE launch and menu without Show FPS verified; controller mapping and scale preserved",
+  "runtime_update": {
+    "version": "0.1.1",
+    "date": "2026-11-03",
+    "core_rebuilt": false,
+    "host_tests": {
+      "automatic_ui_music": "Actual shell apply/restore using fake process fixtures: owned musicserver pauses and resumes; pre-paused musicserver remains untouched; reused PID remains untouched; old owner cannot restore new owner; duplicate restore is inert",
+      "shell_syntax": "Launcher and runtime helper pass /bin/sh -n"
+    },
+    "limits": [
+      "Prior core renderer/menu tests retained; runtime-only update does not change the compiled renderer",
+      "Visual rendering and live service lifecycle were not retested in this packaging session"
+    ]
+  }
 }

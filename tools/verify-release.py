@@ -26,7 +26,7 @@ def check_credentials(name,data):
     # Only the path is reported; never print a matching value.
     assert not any(p.search(data) for p in credential_re),'Possible credential requires review: '+name
 manifest=json.loads((root/'release/BUILD.json').read_text())
-zip_path=root/'release/xbox-trimui-smart-pro-2026.10.30.zip'
+zip_path=root/'release'/manifest.get('install_zip_name','xbox-trimui-smart-pro-2026.10.30.zip')
 assert sha(zip_path.read_bytes())==manifest['install_zip_sha256']
 for line in (root/'release/SHA256SUMS').read_text().splitlines():
     digest,name=line.split('  ',1)
@@ -37,7 +37,7 @@ with zipfile.ZipFile(zip_path) as z:
     assert not any(n.startswith(('Data/ports/hakux2/','Emus/XBOX2/','Roms/')) for n in names)
     assert {n.split('/')[1] for n in names if n.startswith('Emus/')}=={'XBOX'}
     assert sum(n.endswith('/hakux.aarch64') for n in names)==1
-    assert manifest['package_revision'] in {'automatic-swap-1','frame-skip-preview-1','named-directory-1','scale075-preview-1','auto-ui-1','controller-map-1'}
+    assert manifest['package_revision'] in {'automatic-swap-1','frame-skip-preview-1','named-directory-1','scale075-preview-1','auto-ui-1','controller-map-1','runtime-depth-music-1'}
     assert manifest['automatic_swap']['size_mib']==512
     for n in names:
         check_credentials('install ZIP:'+n,z.read(n))
@@ -45,28 +45,28 @@ with zipfile.ZipFile(zip_path) as z:
         assert not any(p in {'hdd','cache','logs','__MACOSX','.git'} for p in PurePosixPath(n).parts)
         assert PurePosixPath(n).name not in {'render-scale','swap-file','picture-settings','menu-settings','controller-map','controller-map.tmp','.DS_Store'}
         info=z.getinfo(n)
-        expected_time=(2026,10,30,0,0,0) if manifest['package_revision'] in {'named-directory-1','scale075-preview-1','auto-ui-1','controller-map-1'} else (2026,10,29,0,0,0)
+        expected_time=(2026,11,3,0,0,0) if manifest['package_revision']=='runtime-depth-music-1' else (2026,10,30,0,0,0) if manifest['package_revision'] in {'named-directory-1','scale075-preview-1','auto-ui-1','controller-map-1','runtime-depth-music-1'} else (2026,10,29,0,0,0)
         assert info.date_time==expected_time and not info.extra and not info.comment
         if n.endswith('.sh'):assert info.external_attr>>16&0o111
-    if manifest['package_revision'] in {'auto-ui-1','controller-map-1'}:
+    if manifest['package_revision'] in {'auto-ui-1','controller-map-1','runtime-depth-music-1'}:
         assert z.read('Data/ports/hakux/runtime-mainui.sh')==(root/'port/platform/mainui-release.sh').read_bytes()
         assert manifest['mainui_release']['default'] is True
         assert manifest['mainui_release']['menu_option'] is False
-    if manifest['package_revision'] in {'controller-map-1'}:
+    if manifest['package_revision'] in {'controller-map-1','runtime-depth-music-1'}:
         assert manifest['controller_mapping']['available'] and manifest['controller_mapping']['fixed_menu_and_exit_shortcuts']
         assert b'XBOX - CONTROLLER MAPPING' in z.read('Data/ports/hakux/hakux.aarch64')
         assert b'hakux-ui-owner' in z.read('Data/ports/hakux/runtime-mainui.sh')
     b=z.read('Data/ports/hakux/hakux.aarch64')
-    if manifest['package_revision'] in {'auto-ui-1','controller-map-1'}:assert b'CLOSE MAINUI:' not in b
+    if manifest['package_revision'] in {'auto-ui-1','controller-map-1','runtime-depth-music-1'}:assert b'CLOSE MAINUI:' not in b
     assert b'SHOW FPS:' not in b
     assert sha(b)==manifest['core_sha256']
-    if manifest['package_revision'] in {'frame-skip-preview-1','named-directory-1','scale075-preview-1','auto-ui-1','controller-map-1'}:
+    if manifest['package_revision'] in {'frame-skip-preview-1','named-directory-1','scale075-preview-1','auto-ui-1','controller-map-1','runtime-depth-music-1'}:
         if manifest['package_revision']=='frame-skip-preview-1':assert not manifest['device_tested_core']
         assert manifest['frame_skip']['default']=='off' and manifest['frame_skip']['live']
         assert b'FRAME SKIP: %s' in b and b'SKIP 1 (DISPLAY)' in b
         host=json.loads((root/'release/HOST-VALIDATION.json').read_text())
         assert host['core_sha256']==sha(b)
-        if manifest['package_revision'] in {'scale075-preview-1','auto-ui-1','controller-map-1'}:
+        if manifest['package_revision'] in {'scale075-preview-1','auto-ui-1','controller-map-1','runtime-depth-music-1'}:
             assert b'0.75X' in b and host['host_tests']['scale075']
             assert manifest['render_scales']==[0.35,0.5,0.75,1]
             assert b'0.35|0.5|0.75|1' in z.read('Data/ports/hakux/run.sh')
@@ -84,6 +84,15 @@ with zipfile.ZipFile(zip_path) as z:
     cfg=json.loads(z.read('Emus/XBOX/config.json'))
     assert cfg['label']=='Xbox' and cfg['rompath']=='../../Roms/XBOX'
     launcher=z.read('Data/ports/hakux/run.sh')
+    if manifest['package_revision']=='runtime-depth-music-1':
+        assert b'HAKUX_HLE_QUIRKS=${HAKUX_HLE_QUIRKS:-+eq_depth_step}' in launcher
+        assert b'eq_depth_step' in b
+        assert manifest['core_changed'] is False
+        assert manifest['mainui_release']['musicserver_memory_released'] is False
+        assert manifest['mainui_release']['services']==['MainUI','trimui_osdd','musicserver']
+        helper=z.read('Data/ports/hakux/runtime-mainui.sh')
+        assert b'pidof musicserver' in helper and b'hakux-ui-owner.music' in helper
+        assert b'kill -CONT "$music_pid"' in helper
     assert b'HAKUX_RENDER_SCALE=0.5' in launcher and b'runtime-swap.sh' in launcher
     swap=z.read('Data/ports/hakux/runtime-swap.sh')
     assert swap==(root/'port/platform/xbox2-swap.sh').read_bytes()

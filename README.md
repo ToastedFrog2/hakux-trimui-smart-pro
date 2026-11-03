@@ -4,22 +4,30 @@ An experimental original Xbox emulator port for the **original TrimUI Smart Pro
 (TG5040, Cortex-A53, PowerVR GE8300, 1 GiB RAM)**, based on
 [rfandango/hakuX](https://github.com/rfandango/hakuX).
 
-**Controller mapping + automatic UI memory release: 2026.10.30.** Launching an Xbox
-game closes the TrimUI frontend and OSD to free up additonal RAM; exiting restores both. No menu
-option or configuration is required. An independent guard also restores
-them if the launcher dies. Controller Mapping saves button assignments for
-all games and includes Reset to defaults.
+**v0.1.1 — Halo 2 depth workaround + music-service pause (2026.11.03).**
+The launcher now enables the existing PowerVR `eq_depth_step` workaround,
+targeting Halo 2's black level geometry and missing lighting passes. The
+compiled emulator core is unchanged from v0.1. Other rendering faults remain
+possible; rectangular shadow/lighting patches around moving objects are a
+known remaining Halo 2 issue. This is not a complete Halo 2 graphics fix.
+
+Launching an Xbox game closes MainUI and the OSD, and now pauses the firmware
+`musicserver` to prevent background CPU use while the OSD is absent. Exiting
+restores the OSD, resumes the owned music service and returns the frontend.
+The music service is paused rather than terminated, so its RAM stays allocated.
+Recovery checks session ownership and process start times. Controller Mapping
+continues to save button assignments for all games and includes Reset to defaults.
 
 This package installs one **Xbox** system entry
 and reads games from the existing **`Roms/XBOX`** folder. 
 
 ## Download and install
 
-1. Download [the ready-to-install ZIP](release/xbox-trimui-smart-pro-2026.10.30.zip)
+1. Download [the ready-to-install ZIP](release/xbox-trimui-smart-pro-v0.1.1.zip)
    using the file page's download button, or from this repository's Releases.
 2. Exit any game and power off the handheld. Put its SD card in a computer.
 3. Extract the ZIP. Copy its **`Data`** and **`Emus`** folders into the SD card's
-   Data and Emus folders. Keep the directory names exactly as provided.
+   root, merging with the existing folders. Keep the directory names exactly as provided.
 4. Put your own Xbox disc images in **`Roms/XBOX`**. Safely eject the SD card,
    reinsert it, start the handheld, and refresh the game list if necessary.
 5. Open **Xbox**, select a game
@@ -61,7 +69,7 @@ may be small and motion can look choppier. It does not fix Halo 2 textures.
 This is an experimental port, with substantial game-specific limitations.
 **A steady 30 FPS across all games is not promised.** Games can have missing or
 black textures, visual glitches, slowdowns, crashes or driver stalls. Halo 2
-still has black/missing textures; this release does not fix them but are being worked on. Lowering the
+can still have missing textures and pop-in despite the depth workaround. Lowering the
 render scale may improve speed but does not repair incorrect rendering.
 
 First-time shader compilation can cause stutter or temporary missing draws.
@@ -122,3 +130,11 @@ bash port/build-xbox2.sh
 The stripped core is `port/dist/hakux.aarch64`. Pinned source revisions and
 hashes are in `sources/SOURCES.json`. Preserve the bundled licenses when
 distributing modified builds.
+
+The v0.1.1 runtime update reuses the exact v0.1 binary. To reproduce its
+installer from the retained v0.1 package and current launcher/helper source:
+
+```sh
+python3 tools/package-runtime-update.py
+python3 tools/verify-release.py
+```

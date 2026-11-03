@@ -37,6 +37,9 @@ trap 'exit 130' INT
 trap 'exit 143' TERM HUP
 export HAKUX_NATIVE_BASE="$APP/cache"
 export NC_TIMEOUT=0
+# PowerVR GE8300: depth-EQUAL lighting passes (Halo 2 BSP) miss the base pass
+# by a depth step and draw black; test LESS_OR_EQUAL one step toward the eye.
+export HAKUX_HLE_QUIRKS=${HAKUX_HLE_QUIRKS:-+eq_depth_step}
 export SDL_AUDIODRIVER=alsa
 export SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS=1
 if [ -f /mnt/SDCARD/Apps/PortMaster/PortMaster/gamecontrollerdb.txt ]; then

@@ -21,5 +21,21 @@
     "controller_mapping": true,
     "scale": 0.5
   },
-  "prior_device_tested_core": "release/known-working-named-directory/DEVICE-VALIDATION.json"
+  "prior_device_tested_core": "release/known-working-named-directory/DEVICE-VALIDATION.json",
+  "runtime_update": {
+    "version": "0.1.1",
+    "date": "2026-11-03",
+    "verification": "SSH inspection of installed files and existing log; no new gameplay launch during packaging",
+    "core_matches_v01": true,
+    "launcher_matches_device": true,
+    "ui_music_helper_matches_device": true,
+    "eq_depth_step_enabled_in_device_log": true,
+    "fresh_gameplay_visual_test": false,
+    "live_music_pause_resume_test": false,
+    "square_artifact_investigation": {
+      "result": "No clean fix validated; diagnostic core and format overrides rejected",
+      "normal_core_and_launch_environment_restored": true,
+      "known_remaining_issue": "Halo 2 rectangular shadow/lighting patches around moving objects"
+    }
+  }
 }
