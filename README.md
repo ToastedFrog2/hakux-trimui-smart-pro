@@ -4,12 +4,18 @@ An experimental original Xbox emulator port for the **original TrimUI Smart Pro
 (TG5040, Cortex-A53, PowerVR GE8300, 1 GiB RAM)**, based on
 [rfandango/hakuX](https://github.com/rfandango/hakuX).
 
-**v0.1.1 — Halo 2 depth workaround + music-service pause (2026.11.03).**
-The launcher now enables the existing PowerVR `eq_depth_step` workaround,
-targeting Halo 2's black level geometry and missing lighting passes. The
-compiled emulator core is unchanged from v0.1. Other rendering faults remain
-possible; rectangular shadow/lighting patches around moving objects are a
-known remaining Halo 2 issue. This is not a complete Halo 2 graphics fix.
+**v0.1.2 — Per-game settings, LAN and screenshots (2026.11.06).**
+Controller mapping, picture options, display frame skip, render scale and
+LAN now save separately for each game and certificate version. The menu
+adds **LAN: Connections on the network**, **Mods and Cheats** support for
+user-supplied files, and **Take Screenshot** with visible, opaque PNG output.
+**No game-specific cheat or mod files are included or downloaded automatically.**
+
+This rebuilt core retains MMIO decoding improvements and stereo audio, with
+corrections to time-cache expiry, common kernel housekeeping and copied-buffer
+ordering. First-use code translation and shader compilation can still cause
+pauses. The PowerVR `eq_depth_step` workaround remains enabled; Halo 2 can
+still show rectangular shadow/lighting patches and other rendering faults.
 
 Launching an Xbox game closes MainUI and the OSD, and now pauses the firmware
 `musicserver` to prevent background CPU use while the OSD is absent. Exiting
@@ -23,7 +29,7 @@ and reads games from the existing **`Roms/XBOX`** folder.
 
 ## Download and install
 
-1. Download [the ready-to-install ZIP](release/xbox-trimui-smart-pro-v0.1.1.zip)
+1. Download [the ready-to-install ZIP](release/xbox-trimui-smart-pro-v0.1.2.zip)
    using the file page's download button, or from this repository's Releases.
 2. Exit any game and power off the handheld. Put its SD card in a computer.
 3. Extract the ZIP. Copy its **`Data`** and **`Emus`** folders into the SD card's
@@ -37,7 +43,7 @@ and reads games from the existing **`Roms/XBOX`** folder.
 
 ![Xbox settings menu from an earlier build](docs/images/xbox-settings-earlier.png)
 
-*Earlier menu preview; the current menu also includes Frame skip and Controller Mapping.*
+*Earlier menu preview; v0.1.2 adds scrolling, LAN, per-game settings, Mods and Cheats, and Take Screenshot.*
 
 | Control | Action |
 | --- | --- |
@@ -48,12 +54,10 @@ and reads games from the existing **`Roms/XBOX`** folder.
 
 The menu offers 0.35×, 0.5×, 0.75× and 1× render scale, screen shape,
 edge smoothing, color presets, controller mapping and exit. Picture settings change live. A scale
-change requires **Apply scale and restart game**; save in-game first.
+change requires **Apply settings and restart game**; save in-game first.
 0.75× is sharper than 0.5× but renders 2.25 times as many pixels; it may be
 slower. A 640×480 game renders at 480×360 with 0.75×. The fresh-install default
 remains 0.5×, and existing saved settings are preserved. Ordinary in-game saves are supported.
-
-**To be added in next release**: Save/load states are being worked on & FPS display. 
 
 **Frame skip: Off / Skip 1 (Display)** is in the Menu list. It defaults to Off,
 changes live and saves between launches. Skip 1 omits alternate display updates
@@ -61,12 +65,24 @@ while preserving game rendering, texture generation and emulated timing. The
 menu always updates normally. This is a display-only option; its speed benefit
 may be small and motion can look choppier. It does not fix Halo 2 textures.
 
-**Controller Mapping** lets you assign each Xbox button to a handheld button or trigger, or disable it. Up/Down selects an Xbox action; Left/Right or A changes its input. Changes apply on resume and persist for all games. Reset to defaults restores the original layout. Physical Menu, menu navigation and the Start + Select exit shortcut always retain their original controls.
+**Controller Mapping** lets you assign each Xbox button to a handheld button or trigger, or disable it. Up/Down selects an Xbox action; Left/Right or A changes its input. Changes apply on resume and persist for the current game. Reset to defaults restores that game's original layout. Physical Menu, menu navigation and the Start + Select exit shortcut always retain their original controls.
 
+
+**LAN** exposes local System Link through the Ethernet-over-UDP tunnel, with
+a restart to apply. See [LAN setup](docs/LAN.md). Two-console gameplay remains
+unverified. [Per-game settings](docs/PER-GAME-SETTINGS.md) inherit existing
+installation defaults until you save an override for that game.
+
+**Take Screenshot** saves to `Screenshots/XBOX` on the SD card, temporarily
+hiding the overlay. **Mods and Cheats** accepts version-matched files supplied
+by the user; the release includes no cheat database or game-specific packs.
+See [formats, controls and validation limits](docs/MODS-AND-SCREENSHOTS.md).
 
 ## What to expect
 
 This is an experimental port, with substantial game-specific limitations.
+The prior per-game core has handheld testing; the final screenshot correction
+is host-tested, and this exact rebuilt release core still needs gameplay testing.
 **A steady 30 FPS across all games is not promised.** Games can have missing or
 black textures, visual glitches, slowdowns, crashes or driver stalls. Halo 2
 can still have missing textures and pop-in despite the depth workaround. Lowering the
@@ -131,10 +147,10 @@ The stripped core is `port/dist/hakux.aarch64`. Pinned source revisions and
 hashes are in `sources/SOURCES.json`. Preserve the bundled licenses when
 distributing modified builds.
 
-The v0.1.1 runtime update reuses the exact v0.1 binary. To reproduce its
-installer from the retained v0.1 package and current launcher/helper source:
+To build the v0.1.2 installer around the rebuilt core and retained v0.1.1
+runtime files:
 
 ```sh
-python3 tools/package-runtime-update.py
+python3 tools/package-menu-release.py --core port/dist/hakux.aarch64
 python3 tools/verify-release.py
 ```

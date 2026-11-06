@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Verify public release integrity, layout and normalized archive metadata."""
+"""Audit release integrity, corresponding source, privacy and archive metadata."""
 from pathlib import Path, PurePosixPath
-import hashlib, json, re, struct, tarfile, zipfile
+import hashlib,json,re,struct,tarfile,zipfile,subprocess
 root=Path(__file__).resolve().parents[1]
 sha=lambda b:hashlib.sha256(b).hexdigest()
 credential_patterns=[
@@ -19,152 +19,90 @@ credential_patterns=[
     rb'''(?i)(?:api[_-]?key|secret[_-]?key|client[_-]?secret|access[_-]?token|auth[_-]?token)\s*["']?\s*[:=]\s*["'][A-Za-z0-9_+/=-]{24,}["']''',
 ]
 credential_re=[re.compile(p) for p in credential_patterns]
-scanned=0
-def check_credentials(name,data):
-    global scanned
-    scanned+=1
-    # Only the path is reported; never print a matching value.
-    assert not any(p.search(data) for p in credential_re),'Possible credential requires review: '+name
-manifest=json.loads((root/'release/BUILD.json').read_text())
-zip_path=root/'release'/manifest.get('install_zip_name','xbox-trimui-smart-pro-2026.10.30.zip')
-assert sha(zip_path.read_bytes())==manifest['install_zip_sha256']
-for line in (root/'release/SHA256SUMS').read_text().splitlines():
-    digest,name=line.split('  ',1)
-    assert sha((root/'release'/name).read_bytes())==digest,name
-with zipfile.ZipFile(zip_path) as z:
-    assert z.testzip() is None
-    names=set(z.namelist())
-    assert not any(n.startswith(('Data/ports/hakux2/','Emus/XBOX2/','Roms/')) for n in names)
-    assert {n.split('/')[1] for n in names if n.startswith('Emus/')}=={'XBOX'}
-    assert sum(n.endswith('/hakux.aarch64') for n in names)==1
-    assert manifest['package_revision'] in {'automatic-swap-1','frame-skip-preview-1','named-directory-1','scale075-preview-1','auto-ui-1','controller-map-1','runtime-depth-music-1'}
-    assert manifest['automatic_swap']['size_mib']==512
-    for n in names:
-        check_credentials('install ZIP:'+n,z.read(n))
-        assert not PurePosixPath(n).is_absolute() and '..' not in PurePosixPath(n).parts
-        assert not any(p in {'hdd','cache','logs','__MACOSX','.git'} for p in PurePosixPath(n).parts)
-        assert PurePosixPath(n).name not in {'render-scale','swap-file','picture-settings','menu-settings','controller-map','controller-map.tmp','.DS_Store'}
-        info=z.getinfo(n)
-        expected_time=(2026,11,3,0,0,0) if manifest['package_revision']=='runtime-depth-music-1' else (2026,10,30,0,0,0) if manifest['package_revision'] in {'named-directory-1','scale075-preview-1','auto-ui-1','controller-map-1','runtime-depth-music-1'} else (2026,10,29,0,0,0)
-        assert info.date_time==expected_time and not info.extra and not info.comment
-        if n.endswith('.sh'):assert info.external_attr>>16&0o111
-    if manifest['package_revision'] in {'auto-ui-1','controller-map-1','runtime-depth-music-1'}:
-        assert z.read('Data/ports/hakux/runtime-mainui.sh')==(root/'port/platform/mainui-release.sh').read_bytes()
-        assert manifest['mainui_release']['default'] is True
-        assert manifest['mainui_release']['menu_option'] is False
-    if manifest['package_revision'] in {'controller-map-1','runtime-depth-music-1'}:
-        assert manifest['controller_mapping']['available'] and manifest['controller_mapping']['fixed_menu_and_exit_shortcuts']
-        assert b'XBOX - CONTROLLER MAPPING' in z.read('Data/ports/hakux/hakux.aarch64')
-        assert b'hakux-ui-owner' in z.read('Data/ports/hakux/runtime-mainui.sh')
-    b=z.read('Data/ports/hakux/hakux.aarch64')
-    if manifest['package_revision'] in {'auto-ui-1','controller-map-1','runtime-depth-music-1'}:assert b'CLOSE MAINUI:' not in b
-    assert b'SHOW FPS:' not in b
-    assert sha(b)==manifest['core_sha256']
-    if manifest['package_revision'] in {'frame-skip-preview-1','named-directory-1','scale075-preview-1','auto-ui-1','controller-map-1','runtime-depth-music-1'}:
-        if manifest['package_revision']=='frame-skip-preview-1':assert not manifest['device_tested_core']
-        assert manifest['frame_skip']['default']=='off' and manifest['frame_skip']['live']
-        assert b'FRAME SKIP: %s' in b and b'SKIP 1 (DISPLAY)' in b
-        host=json.loads((root/'release/HOST-VALIDATION.json').read_text())
-        assert host['core_sha256']==sha(b)
-        if manifest['package_revision'] in {'scale075-preview-1','auto-ui-1','controller-map-1','runtime-depth-music-1'}:
-            assert b'0.75X' in b and host['host_tests']['scale075']
-            assert manifest['render_scales']==[0.35,0.5,0.75,1]
-            assert b'0.35|0.5|0.75|1' in z.read('Data/ports/hakux/run.sh')
-            device=json.loads((root/'release/DEVICE-VALIDATION.json').read_text())
-            assert device==manifest['device_validation'] and device['core_sha256']==sha(b)
-        if manifest['package_revision']=='named-directory-1':
-            device=json.loads((root/'release/DEVICE-VALIDATION.json').read_text())
-            assert device==manifest['device_validation'] and device['core_sha256']==sha(b)
-            assert device['tests']['halo_ce_startup_passed']
-            assert b'\\Win32NamedObjects\\' in b and host['host_tests']['named_directory']
-    else:
-        assert sha(b)=='893afce7818b68d294f7ff3258400fd0dc6120c7698d8be0df109d6ef4bdcab2'
-    assert b[:4]==b'\x7fELF' and struct.unpack_from('<H',b,18)[0]==183
-    for n,digest in manifest['payload_sha256'].items():assert sha(z.read(n))==digest,n
-    cfg=json.loads(z.read('Emus/XBOX/config.json'))
-    assert cfg['label']=='Xbox' and cfg['rompath']=='../../Roms/XBOX'
-    launcher=z.read('Data/ports/hakux/run.sh')
-    if manifest['package_revision']=='runtime-depth-music-1':
-        assert b'HAKUX_HLE_QUIRKS=${HAKUX_HLE_QUIRKS:-+eq_depth_step}' in launcher
-        assert b'eq_depth_step' in b
-        assert manifest['core_changed'] is False
-        assert manifest['mainui_release']['musicserver_memory_released'] is False
-        assert manifest['mainui_release']['services']==['MainUI','trimui_osdd','musicserver']
-        helper=z.read('Data/ports/hakux/runtime-mainui.sh')
-        assert b'pidof musicserver' in helper and b'hakux-ui-owner.music' in helper
-        assert b'kill -CONT "$music_pid"' in helper
-    assert b'HAKUX_RENDER_SCALE=0.5' in launcher and b'runtime-swap.sh' in launcher
-    swap=z.read('Data/ports/hakux/runtime-swap.sh')
-    assert swap==(root/'port/platform/xbox2-swap.sh').read_bytes()
-    assert b'count=512' in swap and b'disable-swap' in swap and b'ln -T' in swap
-    assert b'/Users/' not in launcher and not re.search(rb'\b192\.168\.\d+\.\d+\b',launcher)
-    for n in ['Emus/XBOX/icon.png','Emus/XBOX/iconsmall.png']:
-        data=z.read(n);pos=8
-        while pos<len(data):
-            length=int.from_bytes(data[pos:pos+4],'big');kind=data[pos+4:pos+8]
-            assert kind not in {b'tEXt',b'zTXt',b'iTXt',b'eXIf',b'tIME',b'iCCP'}
-            pos+=length+12
-sources=json.loads((root/'sources/SOURCES.json').read_text())
-for name,digest in manifest.get('port_source_sha256',{}).items():
-    assert sha((root/'port'/name).read_bytes())==digest,name
-count=0
-for e in sources['archives']:
-    p=root/'sources'/e['file'];assert sha(p.read_bytes())==e['sha256']
-    assert p.stat().st_size<25*1024*1024
-    with tarfile.open(p,'r:gz') as tar:
-        members=tar.getmembers();assert len(members)==e['source_files']
-        for m in members:
-            if m.isfile():check_credentials(e['file']+':'+m.name,tar.extractfile(m).read())
-            assert m.uid==m.gid==0 and m.uname==m.gname=='' and not m.pax_headers
-            assert '.git' not in PurePosixPath(m.name).parts
-            assert not PurePosixPath(m.name).is_absolute() and '..' not in PurePosixPath(m.name).parts
-            assert m.isfile() or m.issym()
-            if m.issym():assert not PurePosixPath(m.linkname).is_absolute()
-        count+=len(members)
-files=[p for p in root.rglob('*') if p.is_file() and not any(part in {'.git','__pycache__'} for part in p.relative_to(root).parts)]
-fallback=root/'release/known-working-named-directory'
-if fallback.exists():
-    prior=json.loads((fallback/'BUILD.json').read_text())
-    for line in (fallback/'SHA256SUMS').read_text().splitlines():
-        digest,name=line.split('  ',1);assert sha((fallback/name).read_bytes())==digest,name
-    with zipfile.ZipFile(fallback/'xbox-trimui-smart-pro-2026.10.30.zip') as z:
-        assert z.testzip() is None
-        assert sha(z.read('Data/ports/hakux/hakux.aarch64'))==prior['core_sha256']=='0fa36241953deff7755ff570f99b7ef5a43171fda540b059b365f7df6c602e6a'
-        for n in z.namelist():check_credentials('named-directory fallback:'+n,z.read(n))
-    with tarfile.open(fallback/'port-source.tar.gz','r:gz') as tar:
-        for m in tar.getmembers():
-            assert m.uid==m.gid==0 and m.uname==m.gname=='' and not m.pax_headers
-            assert m.isfile() and '..' not in PurePosixPath(m.name).parts
-            check_credentials('named-directory port source:'+m.name,tar.extractfile(m).read())
-backup=root/'release/known-working'
-if backup.exists():
-    old=json.loads((backup/'BUILD.json').read_text())
-    oldzip=backup/'xbox-trimui-smart-pro-2026.10.29.zip'
-    assert sha(oldzip.read_bytes())==old['install_zip_sha256']
-    with zipfile.ZipFile(oldzip) as z:
-        assert z.testzip() is None
-        assert sha(z.read('Data/ports/hakux/hakux.aarch64'))=='893afce7818b68d294f7ff3258400fd0dc6120c7698d8be0df109d6ef4bdcab2'
-        for n in z.namelist():check_credentials('known working ZIP:'+n,z.read(n))
-    with tarfile.open(backup/'port-source.tar.gz','r:gz') as tar:
-        for m in tar.getmembers():
-            assert m.uid==m.gid==0 and m.uname==m.gname=='' and not m.pax_headers
-            assert m.isfile() and '..' not in PurePosixPath(m.name).parts
-            check_credentials('previous port source:'+m.name,tar.extractfile(m).read())
-for p in files:
-    rel=p.relative_to(root)
-    if p.suffix not in {'.gz','.zip'}:check_credentials(str(rel),p.read_bytes())
-    if p.suffix.lower()=='.png':
-        data=p.read_bytes();assert data[:8]==b'\x89PNG\r\n\x1a\n',rel
-        pos=8
-        while pos<len(data):
-            length=int.from_bytes(data[pos:pos+4],'big');kind=data[pos+4:pos+8]
-            assert kind in {b'IHDR',b'PLTE',b'tRNS',b'IDAT',b'IEND',b'sRGB'},'Unexpected image metadata: '+str(rel)
-            pos+=length+12
-        assert pos==len(data),rel
 
-    assert not p.is_symlink() and p.stat().st_size<25*1024*1024,rel
-    assert '.DS_Store' not in rel.parts and not any(s.startswith('._') for s in rel.parts)
-    assert not str(rel).startswith(('port/source/','port/deps/','port/build/','port/dist/','local/')), 'Clean local staging before uploading: '+str(rel)
-    if p.suffix in {'.md','.py','.sh','.cmake','.json','.h','.c','.inc'} and p!=Path(__file__).resolve():
-        assert not re.search(rb'/Users/[^/\s]+/',p.read_bytes()),rel
-print(f'PASS: tested ARM64 core, ZIP/source hashes, preserved-data layout, public archive metadata; {count} source entries, {len(files)} upload files; {scanned} credential scans with no matches')
+scanned=0
+private_patterns=[rb'/Users/(?!USER/|user/|username/|YOUR_USERNAME/)[A-Za-z0-9_. -]+/']
+if Path.home().parent==Path('/Users'):
+ private_patterns.append(rb'(?i)\b'+re.escape(Path.home().name.encode())+rb'\b')
+private_re=[re.compile(p) for p in private_patterns]
+def audit(name,data,upstream=False):
+ global scanned
+ scanned+=1
+ assert not any(p.search(data) for p in credential_re),'Credential marker requires review: '+name
+ assert not any(p.search(data) for p in (private_re[1:] if upstream else private_re)),'Personal path/identity marker requires review: '+name
+m=json.loads((root/'release/BUILD.json').read_text());assert m['version']=='0.1.2'
+path=root/'release'/m['install_zip_name'];assert sha(path.read_bytes())==m['install_zip_sha256']
+for line in (root/'release/SHA256SUMS').read_text().splitlines():
+ digest,name=line.split('  ',1);assert sha((root/'release'/name).read_bytes())==digest,name
+with zipfile.ZipFile(path) as z:
+ assert z.testzip() is None and not z.comment
+ names=z.namelist();assert sum(n.endswith('/hakux.aarch64') for n in names)==1
+ assert {n.split('/')[1] for n in names if n.startswith('Emus/')}=={'XBOX'}
+ for name in names:
+  rel=PurePosixPath(name);info=z.getinfo(name)
+  assert not rel.is_absolute() and '..' not in rel.parts
+  assert not any(p in {'mods','profiles','hdd','cache','logs','Screenshots','Roms','.git','__MACOSX'} for p in rel.parts),name
+  assert rel.name not in {'.DS_Store','controller-map','render-scale','menu-settings','network-mode','enabled','enabled-cheats','cheats.txt'}
+  assert info.date_time==(2026,11,6,0,0,0) and not info.extra and not info.comment
+  if name.endswith(('.sh','/hakux.aarch64')):assert info.external_attr>>16&0o111
+  audit('install:'+name,z.read(name))
+ for name,digest in m['payload_sha256'].items():assert sha(z.read(name))==digest,name
+ inner=json.loads(z.read('Data/ports/hakux/BUILD.json'))
+ assert all(m[k]==v for k,v in inner.items())
+ core=z.read('Data/ports/hakux/hakux.aarch64');assert sha(core)==m['core_sha256']
+ assert core[:4]==b'\x7fELF' and struct.unpack_from('<H',core,18)[0]==183
+ for marker in [b'GAME SETTINGS:',b'MODS AND CHEATS',b'TAKE SCREENSHOT',b'toggle8',b'CONNECTIONS ON THE NETWORK']:
+  assert marker in core
+ assert b'SHOW FPS:' not in core and b'CLOSE MAINUI:' not in core
+ cfg=json.loads(z.read('Emus/XBOX/config.json'));assert cfg['label']=='Xbox' and cfg['rompath']=='../../Roms/XBOX'
+ runner=z.read('Data/ports/hakux/run.sh');assert b'HAKUX_RENDER_SCALE=0.5' in runner and b'"net=$NETWORK"' in runner
+ assert b'HAKUX_HLE_QUIRKS=${HAKUX_HLE_QUIRKS:-+eq_depth_step}' in runner
+ assert z.read('Data/ports/hakux/runtime-mainui.sh')==(root/'port/platform/mainui-release.sh').read_bytes()
+ assert z.read('Data/ports/hakux/runtime-swap.sh')==(root/'port/platform/xbox2-swap.sh').read_bytes()
+assert m['automatic_swap']['size_mib']==512 and m['fresh_install_defaults']['lan']=='off'
+assert m['menu_extras']['game_specific_files_included'] is False
+assert m['controller_mapping']['global'] is False
+for report in ['HOST-VALIDATION.json','DEVICE-VALIDATION.json']:
+ assert json.loads((root/'release'/report).read_text())['core_sha256']==m['core_sha256']
+for name,digest in m['port_source_sha256'].items():assert sha((root/'port'/name).read_bytes())==digest,name
+sources=json.loads((root/'sources/SOURCES.json').read_text());entries=0
+for item in sources['archives']:
+ archive=root/'sources'/item['file'];assert sha(archive.read_bytes())==item['sha256']
+ assert m['source_archives'][item['file']]==item['sha256']
+ assert archive.stat().st_size==item['archive_bytes']
+ with tarfile.open(archive) as tar:
+  members=tar.getmembers();assert len(members)==item['source_files']
+  for member in members:
+   rel=PurePosixPath(member.name)
+   assert member.uid==member.gid==0 and member.uname==member.gname=='' and not member.pax_headers
+   assert not rel.is_absolute() and '..' not in rel.parts and '.git' not in rel.parts
+   assert member.isfile() or member.issym()
+   assert not (str(rel).startswith('source/mods/') and str(rel)!='source/mods/README.md'),'Game-specific pack in source archive: '+str(rel)
+   if member.isfile():audit(item['file']+':'+member.name,tar.extractfile(member).read(),upstream=True)
+   if member.issym():assert not PurePosixPath(member.linkname).is_absolute()
+  entries+=len(members)
+# Git ignores local build/staging directories; audit the actual upload candidates.
+names=set(subprocess.check_output(['git','ls-files','-z'],cwd=root).split(b'\0'))
+names.update(subprocess.check_output(['git','ls-files','--others','--exclude-standard','-z'],cwd=root).split(b'\0'))
+for encoded in names:
+ if not encoded:continue
+ rel=Path(encoded.decode());file=root/rel
+ if not file.exists():continue
+ assert not file.is_symlink() and file.stat().st_size<25*1024*1024,str(rel)
+ assert not any(p in {'__MACOSX','.DS_Store','mods','profiles'} or p.startswith('._') for p in rel.parts),str(rel)
+ data=file.read_bytes()
+ if file.suffix=='.zip':
+  with zipfile.ZipFile(file) as archive:
+   assert not archive.comment and archive.testzip() is None
+   for name in archive.namelist():
+    assert not archive.getinfo(name).extra and not archive.getinfo(name).comment
+    assert not any(p in {'mods','profiles','hdd','cache','logs','__MACOSX'} for p in PurePosixPath(name).parts)
+    audit(str(rel)+':'+name,archive.read(name))
+ elif file.suffix!='.gz':audit(str(rel),data)
+ if file.suffix=='.png':
+  assert data.startswith(b'\x89PNG\r\n\x1a\n');at=8
+  while at<len(data):
+   n=int.from_bytes(data[at:at+4],'big');assert data[at+4:at+8] in {b'IHDR',b'PLTE',b'tRNS',b'IDAT',b'IEND',b'sRGB'}
+   at+=n+12
+  assert at==len(data)
+print(f'PASS release: payload/source checksums, normalized metadata, preserved-data layout, no game-specific packs; {entries} source entries and {scanned} privacy/credential scans')

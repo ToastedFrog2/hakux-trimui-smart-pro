@@ -4,6 +4,7 @@ from pathlib import Path
 root=Path(__file__).resolve().parent
 def replace(name,old,new):
     p=root/'source'/name;s=p.read_text()
+    if name=='native/run/xboxrun.c' and old=='#include "hakux/menu.h"' and '#include "hakux/gpu_progress.h"' in s:return
     if new in s:return
     if old not in s:raise SystemExit('Recovery patch context missing: '+name)
     p.write_text(s.replace(old,new))

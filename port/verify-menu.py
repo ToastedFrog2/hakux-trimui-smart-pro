@@ -32,19 +32,22 @@ N=$((N+1))
 echo "$N" > count
 test "$1" = "$EXPECTED_ROM"
 test "$2" = "hdd=$PWD/hdd"
+case "$N" in 1) test "$3" = net=off;; *) test "$3" = net=lan;; esac
 case "$N" in
  1) test "$HAKUX_RENDER_SCALE" = 0.5
     echo 0.75 > render-scale
+    echo lan > network-mode
     echo restart > menu-restart
     exit 20;;
  2) test "$HAKUX_RENDER_SCALE" = 0.75
-    test "$#" = 2
+    test "$#" = 3
     touch relaunch.bin
     exit 10;;
- 3) test "$3" = relaunch
+ 3) test "$4" = relaunch
+    test "$#" = 4
     echo restart > menu-restart
     exit 20;;
- 4) test "$#" = 2
+ 4) test "$#" = 3
     exit 0;;
  *) exit 98;;
 esac
@@ -58,4 +61,10 @@ esac
     assert (app/'count').read_text().strip()=='4'
     assert not (temp/'stay_awake').exists()
     assert not (app/'menu-restart').exists()
+    # Invalid/untrusted mode files must fall back to an unconnected NIC.
+    (app/'hakux.aarch64').write_text('#!/bin/sh\ntest "$#" = 3 && test "$3" = net=off\n')
+    for mode in ['off', 'nat', 'lan; touch INJECTED', 'lan\noff']:
+        (app/'network-mode').write_text(mode+'\n')
+        subprocess.run(['/bin/sh',str(temp/'run.sh'),str(rom)],env=env,cwd=temp,check=True)
+    assert not (app/'INJECTED').exists()
     print('PASS actual launcher: scale restart, game XBE relaunch, paths with spaces, awake cleanup')

@@ -2,10 +2,24 @@
 #include <assert.h>
 #include "native/dev/usb.h"
 #include <sys/wait.h>
+#include <sys/stat.h>
 static Uint32 ticks;
 static Uint8 buttons[SDL_CONTROLLER_BUTTON_MAX];
 static Sint16 axes[SDL_CONTROLLER_AXIS_MAX];
 static bool paused;
+static const char *test_scope="";
+bool hakux_profile_path(const char *name,char *path,size_t n){if(!strcmp(name,"menu-restart"))return snprintf(path,n,"%s",name)<(int)n;return snprintf(path,n,"%s%s%s",test_scope,*test_scope?"/":"",name)<(int)n;}
+FILE *hakux_profile_open(const char *name){char path[160];hakux_profile_path(name,path,sizeof(path));FILE *f=fopen(path,"r");return f?f:fopen(name,"r");}
+const char *hakux_profile_key(void){return test_scope;}
+static unsigned extra_actions,shots;
+unsigned hakux_extras_rows(void){return 3;}
+const char *hakux_extras_game_key(void){return "12345678.3";}
+void hakux_extras_line(unsigned row,char *out,size_t n){snprintf(out,n,"TEST ROW %u",row);}
+bool hakux_extras_choose(unsigned row,char *status,size_t n){extra_actions++;snprintf(status,n,"TEST TOGGLE");return row==2;}
+bool hakux_extras_screenshot(void){shots++;return true;}
+
+static NcNetMode network_mode=NC_NET_OFF;
+NcNetMode nc_net_mode(void) {return network_mode;}
 static void teardown_marker(void) {FILE *f=fopen("UNSAFE-TEARDOWN","w");if(f){fputs("ran",f);fclose(f);}}
 static int aspect,filter,fxaa;
 Uint32 SDL_GetTicks(void) { return ticks; }
@@ -88,7 +102,17 @@ int main(void)
     assert(write_setting("controller-map","1 1 0 2"));map_load();assert(controller_map[0]==0);
     assert(write_setting("controller-map","2 1 0 2 3 4 5 6 7 8 9 10 11 12 13 14 15"));map_load();assert(controller_map[0]==0);
     assert(map_save());
-    ui.row=SCALE;change(1);assert(ui.scale==2 && scales[ui.scale]==.75f);
+    /* LAN is staged until a confirmed restart, leaving the active NIC alone. */
+    ui.row=LAN;change(1);
+    assert(ui.lan==1 && nc_net_mode()==NC_NET_OFF);
+    assert(access("network-mode",F_OK)!=0);
+    change(-1);assert(ui.lan==0);change(1);assert(ui.lan==1);
+    menu();ui.row=EXTRAS;press(SDL_CONTROLLER_BUTTON_A);assert(ui.extras&&paused);
+    press(SDL_CONTROLLER_BUTTON_A);assert(extra_actions==1);
+    press(SDL_CONTROLLER_BUTTON_DPAD_DOWN);press(SDL_CONTROLLER_BUTTON_DPAD_DOWN);press(SDL_CONTROLLER_BUTTON_A);assert(!ui.extras);
+    ui.row=SNAPSHOT;press(SDL_CONTROLLER_BUTTON_A);assert(shots==1&&ui.open);
+    hakux_menu_notice("SCREENSHOT SAVED");assert(!strcmp(ui.status,"SCREENSHOT SAVED"));
+    menu();assert(!ui.open);ui.row=SCALE;change(1);assert(ui.scale==2 && scales[ui.scale]==.75f);
     change(1);assert(ui.scale==3 && scales[ui.scale]==1.0f);
     change(1);assert(ui.scale==0);change(-1);assert(ui.scale==3);
     ui.scale=1;ui.row=RESUME;
@@ -122,6 +146,9 @@ int main(void)
     assert(draws==3&&rect_count>500);
     bound_w=640;bound_h=360;hakux_menu_draw((VkCommandBuffer)1,&table,bound_w,bound_h);
     assert(draws==6);
+    /* Every settings row scrolls above the footer at both display sizes. */
+    for(int i=0;i<ROWS;i++) {ui.row=i;hakux_menu_draw((VkCommandBuffer)1,&table,bound_w,bound_h);}
+
     ui.mapping=true;
     for(int i=0;i<MAP_ROWS;i++) {
         ui.map_row=i;hakux_menu_draw((VkCommandBuffer)1,&table,bound_w,bound_h);
@@ -131,13 +158,15 @@ int main(void)
     buttons[SDL_CONTROLLER_BUTTON_B]=1;assert(hakux_menu_input(pad));assert(!ui.open);
     assert(hakux_menu_input(pad));buttons[SDL_CONTROLLER_BUTTON_B]=0;assert(!hakux_menu_input(pad));
     menu();ui.row=RESTART;press(SDL_CONTROLLER_BUTTON_A);assert(ui.confirm);
+    ui.lan=1;
     ui.scale=2; /* Confirm the new scale is actually written for the launcher. */
     pid_t child=fork();assert(child>=0);
     if(!child) {atexit(teardown_marker);press(SDL_CONTROLLER_BUTTON_A);_exit(99);}
     int status;assert(waitpid(child,&status,0)==child&&WIFEXITED(status)&&WEXITSTATUS(status)==20);
     assert(access("UNSAFE-TEARDOWN",F_OK)!=0);
     f=fopen("render-scale","r");assert(fscanf(f,"%f",&value)==1&&value==.75f);fclose(f);
-    char request[80];f=fopen("menu-restart","r");assert(fgets(request,sizeof(request),f)&&!strcmp(request,"restart\n"));fclose(f);
+    char request[80];f=fopen("network-mode","r");assert(fgets(request,sizeof(request),f)&&!strcmp(request,"lan\n"));fclose(f);
+    f=fopen("menu-restart","r");assert(fgets(request,sizeof(request),f)&&!strcmp(request,"restart\n"));fclose(f);
     child=fork();assert(child>=0);
     if(!child) {atexit(teardown_marker);ui.row=QUIT;ui.confirm=false;press(SDL_CONTROLLER_BUTTON_A);press(SDL_CONTROLLER_BUTTON_A);_exit(99);}
     assert(waitpid(child,&status,0)==child&&WIFEXITED(status)&&WEXITSTATUS(status)==0);
@@ -156,7 +185,18 @@ int main(void)
     assert(ui.aspect==1 && ui.color==2 && ui.frame_skip==1);
     assert(write_setting("menu-settings","1 0 1 2 99"));hakux_menu_init(3,argv);
     assert(ui.aspect==1 && ui.frame_skip==0);
+    network_mode=NC_NET_LAN;hakux_menu_init(3,argv);assert(ui.lan==1);
+    network_mode=NC_NET_OFF;hakux_menu_init(3,argv);assert(ui.lan==0);
     host_scale=.75f;hakux_menu_init(3,argv);assert(ui.scale==2);
     host_scale=1.0f;hakux_menu_init(3,argv);assert(ui.scale==3);
+    assert(!mkdir("game-A",0755)&&!mkdir("game-B",0755));
+    test_scope="game-A";ui.aspect=2;ui.color=3;assert(persist());controller_map[0]=1;assert(map_save());
+    assert(write_setting("render-scale","0.35"));assert(write_setting("network-mode","lan"));
+    test_scope="game-B";ui=(typeof(ui)){0};hakux_menu_init(3,argv);
+    assert(ui.aspect==1&&ui.color==2&&controller_map[0]==0);
+    test_scope="game-A";ui=(typeof(ui)){0};hakux_menu_init(3,argv);
+    assert(ui.aspect==2&&ui.color==3&&controller_map[0]==1);
+    char scoped[160];assert(hakux_profile_path("menu-restart",scoped,sizeof(scoped))&&!strcmp(scoped,"menu-restart"));
+    puts("PASS actual menu persistence: per-game mapping and picture settings save/load without changing defaults or another game");
     puts("PASS actual menu: navigation, pause/resume, input suppression, live display settings, bounded Vulkan text, confirmed restart, physical Guide events");
 }

@@ -1,34 +1,16 @@
 {
-  "core_sha256": "04b9f20f6de5cc481ed0b15e8311fadde49cb3422277131cc9d80bf5dadf6a55",
-  "build": "controller-map-no-fps",
-  "device_tested": false,
-  "rendering": "all guest rendering preserved; alternate unique display fronts skipped when selected",
+  "core_sha256": "6f6623f3613a691701b113807c8d01c88670e4aa88d1c695b1091999fd25dd96",
   "host_tests": {
-    "menu": "ASan/UBSan actual menu/input/launcher: all 16 default actions including isolated L3/R3, remapping/persistence/reset/invalid configuration, pause/resume/navigation, restart, bounded Vulkan text",
-    "presenter": "ASan/UBSan actual presenter/frame-skip integration, baseline and Xbox2 variants; display pickup, repeated frames, settings/gamma/window forcing and failed-begin path",
-    "build_patch_rerun": "Fresh public source unpack and complete patch sequence twice; all 7,440 files match active source; patches idempotent",
-    "named_directory": "ASan/UBSan actual NtCreateEvent, NtCreateSemaphore, NtCreateMutant and object manager: Win32 pseudo-root, absolute aliases, namespace isolation, case/type rules, open-if state preservation, invalid roots and name length bounds",
-    "scale075": "ASan/UBSan extent/rect/sample-count and actual copy/option checks; 48 generated Vulkan shaders validated; 32 prior 0.5x/0.35x shaders byte-identical; live menu navigation and confirmed 0.75x launcher restart",
-    "mainui_menu": "No MainUI menu toggle; automatic lifecycle retained",
-    "automatic_ui": "Actual shell restore: stale ownership cannot restore a newer session; current owner restores once; duplicate guards are inert; rapid relaunch verified on device",
-    "fps_reverted": "Exact prior core SHA restored; no Show FPS menu, overlay drawing or added sampling hook"
+    "profiles": "Actual XDVDFS identity, certificate-version isolation, inherited defaults, scale/LAN validation and descriptor ownership",
+    "menu": "Actual navigation, pause/resume, remapping, per-game persistence, bounded rendering and confirmed restart",
+    "native_cheats": "Original engine regressions plus guarded toggle8 restoration, unmapped memory and existing-state preservation under sanitizers",
+    "screenshot": "Actual asynchronous request and PNG normalization: RGB/RGBA, all five filters, exact RGB, opaque output, metadata removal, malformed rejection under sanitizers",
+    "vcpu_safety": "Actual time expiry, copied-buffer protection and common MMIO path; faulty variants reproduce the prior failures",
+    "source_correspondence": "Full clean source plus patches matches the build inputs; applying all patches twice is idempotent"
   },
-  "prior_core_retained": "release/known-working-named-directory",
-  "swap_setup_host_cases": 24,
-  "matching_compiled_source_files": 7440,
-  "device_smoke_tested": true,
-  "device_smoke_scope": "Exact pre-FPS core restored; Halo CE launch and menu without Show FPS verified; controller mapping and scale preserved",
-  "runtime_update": {
-    "version": "0.1.1",
-    "date": "2026-11-03",
-    "core_rebuilt": false,
-    "host_tests": {
-      "automatic_ui_music": "Actual shell apply/restore using fake process fixtures: owned musicserver pauses and resumes; pre-paused musicserver remains untouched; reused PID remains untouched; old owner cannot restore new owner; duplicate restore is inert",
-      "shell_syntax": "Launcher and runtime helper pass /bin/sh -n"
-    },
-    "limits": [
-      "Prior core renderer/menu tests retained; runtime-only update does not change the compiled renderer",
-      "Visual rendering and live service lifecycle were not retested in this packaging session"
-    ]
-  }
+  "limits": [
+    "Final screenshot normalization is host-tested; this exact rebuilt core has not been gameplay-tested",
+    "Two-console System Link gameplay is unverified",
+    "Long-session stability and all-game compatibility are not established"
+  ]
 }

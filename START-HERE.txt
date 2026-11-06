@@ -1,7 +1,7 @@
 To test on a new SD card:
 
 1. Prepare the card with working TrimUI Smart Pro TG5040 firmware first.
-2. Open release/xbox-trimui-smart-pro-v0.1.1.zip inside this folder.
+2. Open release/xbox-trimui-smart-pro-v0.1.2.zip inside this folder.
 3. Extract its Data and Emus folders into the SD card root, merging folders.
 4. Put your own Xbox images in Roms/XBOX. ISO, XISO and SQFS are supported.
 5. Safely eject the card, boot the handheld, and select Xbox.
@@ -24,5 +24,6 @@ No saved mappings or settings are bundled. L3/R3 default to Xbox stick clicks.
 An existing app folder keeps its settings: use Controller Mapping > Reset
 to defaults to clear an old custom layout.
 
-v0.1.1 enables the existing PowerVR depth-comparison workaround through the
-launcher. The v0.1 emulator binary is unchanged. No settings reset is needed.
+v0.1.2 adds per-game settings, LAN menu support, screenshots and a user-supplied
+mods/cheats catalog. No game-specific cheat files or mod packs are included.
+See the README for controls, source build instructions and testing limits.

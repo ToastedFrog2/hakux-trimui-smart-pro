@@ -1,13 +1,13 @@
 {
-  "name": "hakuX for TrimUI Smart Pro — Xbox",
-  "version": "0.1.1",
-  "core_build": "2026-10-30-controller-map-1",
-  "core_sha256": "04b9f20f6de5cc481ed0b15e8311fadde49cb3422277131cc9d80bf5dadf6a55",
+  "name": "hakuX for TrimUI Smart Pro \u2014 Xbox",
+  "version": "0.1.2",
+  "core_build": "per-game-menu-opaque-capture",
+  "core_sha256": "6f6623f3613a691701b113807c8d01c88670e4aa88d1c695b1091999fd25dd96",
   "hardware": "original TrimUI Smart Pro TG5040 / Cortex-A53 / PowerVR GE8300 / 1 GiB RAM",
   "default_render_scale": 0.5,
   "device_tested_core": false,
-  "device_smoke_tested": true,
-  "package_revision": "runtime-depth-music-1",
+  "device_smoke_tested": false,
+  "package_revision": "per-game-menu-1",
   "fresh_install_defaults": {
     "render_scale": 0.5,
     "controller_mapping": "identity; L3 and R3 are Xbox stick clicks",
@@ -16,15 +16,17 @@
     "upscale": "bilinear",
     "fxaa": "off",
     "color": "original",
-    "saved_settings_bundled": false
+    "saved_settings_bundled": false,
+    "lan": "off"
   },
   "controller_mapping": {
     "available": true,
-    "global": true,
+    "global": false,
     "live_on_resume": true,
     "persisted": true,
-    "file": "controller-map",
-    "fixed_menu_and_exit_shortcuts": true
+    "file": "profiles/TITLEID.VERSION/controller-map",
+    "fixed_menu_and_exit_shortcuts": true,
+    "scope": "title ID and certificate version"
   },
   "mainui_release": {
     "available": true,
@@ -68,47 +70,21 @@
     "existing_configuration_preserved": true,
     "creation_device_tested": false
   },
-  "validation": "Unchanged v0.1 core; see HOST-VALIDATION.json and DEVICE-VALIDATION.json for runtime-update checks",
+  "validation": "Host regressions passed; prior per-game core has device menu/gameplay reports; final capture correction is host-tested",
   "device_validation": {
-    "core_sha256": "04b9f20f6de5cc481ed0b15e8311fadde49cb3422277131cc9d80bf5dadf6a55",
-    "hardware": "Original TrimUI Smart Pro TG5040",
-    "tests": {
-      "exact_pre_fps_core_restored": true,
-      "halo_ce_startup": true,
-      "fps_menu_option_absent": true,
-      "controller_mapping_menu_display": true,
-      "render_scale_preserved_05": true,
-      "physical_start_select_exit": true
-    },
-    "limits": [
-      "No new FPS benchmark or long-session gameplay validation",
-      "All 16 default input actions verified on host; installer contains no saved mappings or settings",
-      "Automatic swap creation on a fresh physical device remains unverified"
+    "core_sha256": "6f6623f3613a691701b113807c8d01c88670e4aa88d1c695b1091999fd25dd96",
+    "tests": {},
+    "tested_base_core_sha256": "b689bf6e29b374f803800c864d640d1a4478d1187aa5da157464529fa8e8e975",
+    "base_core_checks": [
+      "Halo CE boot, per-game profile display and settings write",
+      "User reports working Halo 2 gameplay and menu",
+      "Framebuffer screenshot capture, followed by host alpha correction"
     ],
-    "configuration": {
-      "automatic_ui_release": true,
-      "menu_toggle": false,
-      "fps_overlay": false,
-      "controller_mapping": true,
-      "scale": 0.5
-    },
-    "prior_device_tested_core": "release/known-working-named-directory/DEVICE-VALIDATION.json",
-    "runtime_update": {
-      "version": "0.1.1",
-      "date": "2026-11-03",
-      "verification": "SSH inspection of installed files and existing log; no new gameplay launch during packaging",
-      "core_matches_v01": true,
-      "launcher_matches_device": true,
-      "ui_music_helper_matches_device": true,
-      "eq_depth_step_enabled_in_device_log": true,
-      "fresh_gameplay_visual_test": false,
-      "live_music_pause_resume_test": false,
-      "square_artifact_investigation": {
-        "result": "No clean fix validated; diagnostic core and format overrides rejected",
-        "normal_core_and_launch_environment_restored": true,
-        "known_remaining_issue": "Halo 2 rectangular shadow/lighting patches around moving objects"
-      }
-    }
+    "limits": [
+      "Final screenshot normalization is host-tested; this exact rebuilt core has not been gameplay-tested",
+      "Two-console System Link gameplay is unverified",
+      "Long-session stability and all-game compatibility are not established"
+    ]
   },
   "known_issues": [
     "Halo 2 black/missing textures",
@@ -117,69 +93,93 @@
     "Halo 2 rectangular shadow/lighting patches around moving objects"
   ],
   "source_archives": {
-    "hakux-patched.tar.gz": "09d8298496a409763d64b227852363e56e2d7f3e6ac795403979ee4a422a5e18",
+    "hakux-patched.tar.gz": "fffcef2cc272623edcf2b4e47ffdcfe176ffdc921d8dbbd9341abe97da83cfc5",
     "fex-patched.tar.gz": "0cd50dc24a89097fa24cb2c2f8eb9e4b6763414eb55ad16ddcb106422f057fe6",
     "sdl2-source.tar.gz": "e293ed6c0acc8ea6a1eef2210f128602b44001f669bd6868829f0e2a92643625",
     "dependencies.tar.gz": "75f5bbffb6c71406a9c7d01a148277ca77da0aa806206ad8dffe011af67620ff"
   },
   "port_source_sha256": {
     "patch-halo2-save.py": "e6e5f051670edc4b357d2780c88cffee19025c60898028672741964184523384",
+    "verify-vcpu-safe.py": "6a9875d6cbfed56752f01811c65b188e19a150e1c0b577723ddd6735a379ed4f",
+    "verify-cheat-toggle.py": "41114f2d928212bdb908b5fd0323695618d061d89606d24c9e5b0bcc3f2a7834",
+    "patch-extras.py": "a652c036991da53a9606f3f8e608ebd03e3effdd32293221f6b48249fcf66248",
     "patch-scale075.py": "41bd9520794e724c1d448e22f9fd232b95375b75869797a33c60ff01059bf59c",
     "verify-recovery.py": "be899cc68c32d0a68e4043ebfd57aa60fd9da6d691e78b3a32e66b28a18a2c48",
-    "verify-menu.py": "1e2a633bd95b7ecea9552f1e9980c9c629a8192367f1570a2559f909aa9327c7",
+    "verify-menu.py": "169db24b64174015c62d6ffbb56f020d4f4022bb2cf197fc3e769079f888bf49",
     "patch-memory.py": "5953e11f32deca653565c7d1c2561a954e6188d4b7976adaa1cb0d6605f639ca",
+    "patch-powervr-eqdepth.py": "8db6e7d701ef429a9387df426cf2074014dded0d78f9f70ddf27cf30ff5dad91",
     "verify-ui-release.py": "af88a3e15556e5fc5322e0b6c110d4aede22f89f22782aeee5af0829c87e9535",
-    "patch-recovery.py": "9b7b978689dd2edc27ff4a06166a704ea3bffd28460ef4d97596a58a394d3cbc",
+    "patch-recovery.py": "2f54d3ff972e8fa903c4419bab9c6190c955b985495dad7a22ada4d354630c00",
     "patch-halfscale.py": "938f749c8dacaf76502ab26ce3902d87a773c46fd20880639d56b946f7c9a186",
-    "build-xbox2.sh": "998afe1172d11d6dbfea7ee4c6e5981e3329631ab92bd1023e334fe82773317a",
+    "patch-vcpu-safe.py": "fc7ca2efb443a0cc6a15e45017d4df3c34207fb2a03e9b09e589d7bb76c69c21",
+    "build-xbox2.sh": "993a2a2a4586e60918ed7917b79635cfa4c8639db94da4d4441b9be79f6d741a",
     "patch-shader-compat.py": "fee4ca70b647c2c521b4e27150cfee30a00ec7fba3a2baa6a87077e2b2b7f021",
     "unpack-sources.py": "ba4f8d91f7ee18dd8bac6622e20f55b6b5c941189f287ca3803f1256163fd013",
     "verify-frame-skip.py": "1f9762117e8ea6cc9380a5e5466da271bb82227595919ee3d7c5b33052a77742",
+    "verify-png.py": "549a1666d3a145500face5d242e0f0a1048420cbaa8992a4ce3de3f62bd3c657",
     "patch-objects.py": "ab2218af2aff586939a57b826c1b79b297f3907ce6dae3f74ff3cfb44d08495b",
-    "verify-build-patches.py": "7cdbb1d393851695adaa7fab3f2de4be609236b349b61618381ee3690e1be2b1",
+    "verify-build-patches.py": "2ea4fa930f395bbfceed4b984febbb54d2d74b90afc028a047ecc4d3d4f72b78",
     "patch-xbox2.py": "7abf89a4bd569f05b907738bc28ea70239d2dc5df8e82d450cb350f48b8126cc",
     "verify-memory-prebuild.py": "a3871e24edebe09b3043753b71c3dff40846209c7c4c2e55c97af601c0c1606d",
     "verify-xbox2.py": "73f396b6a9a74688faa411441af4efe84636ebb0ac0074904717fdb24139f58c",
+    "verify-extras.py": "f6d18ce55a4fde959cac4622e5442eef050f3dee52401bfec40e3b5fa2b54316",
+    "verify-profiles.py": "b689c1b9bb30482853e89189cffb3d102f5dbabe359c6fa6f1ef60407e2cfe41",
     "verify-halfscale.py": "47e4c52b9107230fdaf97fa4c5dabe6ab814a260020854f1ce13d461dfd4f018",
     "state-sizes.py": "b2667b17bca16ac1d52944628e54ba212cb85e29cd2f0e74ab29ee6c5e04c785",
-    "patch-menu.py": "07c3d5a54ff820aa4d6a506a0d311461669202a31f82ded54c6825054dd4062d",
+    "patch-profiles.py": "f19bd6fe7459b497c360c6f451982ed006d9f893e663da01ebe8e9ab62f68b7b",
+    "patch-menu.py": "7eba60b2582122e5a1fcd57624d3d80b86b6115f0d9dfc9f3bb2ec47695cd7f0",
     "verify-objects.py": "6dff0c9252edcfa78b050d019534ab3e360cbf67dab52698f5d941536a5e2d69",
     "patch-frame-skip.py": "9129ccd48cbf9d5fde06423295559f1052d26f56709d35ff0b3aba92288255d5",
     "patch-source.py": "5c639fe344c317bcacdf91339d10e269456edab1f3aa945ba4fa51510cabd4e2",
+    "patch-cheat-toggle.py": "b2725719e91677bd4563b2391d14a68357f123edd2954d855fb0c92c255c4ff3",
     "platform/mainui-release.sh": "21637fe6b72bb2176240902d3b98e48b8fee2ec43dee6b681c6a9d4399a4799c",
     "platform/display.c": "744f89592a84b60fdcf9b10550421b7bd1d4c461d16780ad6d00912d3b6167dc",
     "platform/frontend.c": "fe862c4f1c94c3242568a5406bfa949da959c3323ac78d24edd70ed29956c148",
     "platform/fastmem.c": "236cc8ff01ed5e988833d5ecf87b4ab7c515025ee15d2e1385b3b1829c63e9d7",
     "platform/xbox2_pscache.h": "0ea948c28a0245a53075937685093dedcf7b62ceb18d2675636b098fe8040f5c",
-    "platform/menu.c": "2a7b43e3b27ab0d439189cb70186f81cc770835052de9e48106beb3c96f5d6a5",
+    "platform/menu.c": "2ecb1c1c884e87de49cca8d054d37a137c4dab58618152415136a14c0d78a50f",
     "platform/disc-container.sh": "09e9081fa8085a2f048894e57cfe3deb1a5305d57e82f68e4a2ab2cb1e5c2029",
     "platform/xbox2_index_batch.h": "84d25f4d133c2308c2e340ab792ff145e4dbee0213c35ce8b095664dd5f788d9",
     "platform/xbox2-swap.sh": "ff3e0477da1e6007711d1b985b4fa6f0555ebda2db3c37c3d5e30ac383827531",
+    "platform/profile.c": "be686b288e03acc1a09aebe1f3911cb436bcf96585449989b0664efed65377bf",
+    "platform/extras.c": "8576867f2f83307c17af1119277508f997172d07aa6a6fbb8f1a3bd11eb883e2",
+    "platform/png.c": "5a8217d603ea632681ed3a5ad9125900323d83615d47f3d8da81355198b634f1",
     "platform/audio.c": "7a529633d648a6904035d47f174818a5d6375ea6ff0c8bf753755679141a5d71",
     "platform/include/linux_random.h": "eab2b54247237b7c28dff092c0687bf96c0be2ca5891cbd7fce8d914c50b1773",
     "platform/include/sys/system_properties.h": "d417ec8849c7bafedf4b144ea0a234bf6a6b955bb2db98307304b636ad4d1f65",
     "platform/include/android/native_window.h": "750b2429d9395e863edeb13163043888a4a11e794b7c53a028e52cb9f1d6d0b4",
     "platform/include/android/hardware_buffer.h": "440878bdef35f29d67d510ab4238104563dc8b4f7f9006eeef0d7598a770671d",
+    "platform/include/hakux/capture.h": "6045f7d3d3483f96d603dc7f068ceacdb7c35202c1f0a21eba22961d1fe9b8e7",
+    "platform/include/hakux/profile.h": "c65cb1ba106bb179ea441b1effed5cfb3fcaaf183a4d4a82aa1e2b95cfb16648",
     "platform/include/hakux/named_objects.inc": "5895df4a9c71e56fe952f53bfbae0fec66eef226a06ed95a3ba86b1151e431c6",
     "platform/include/hakux/frame_skip.h": "affe011a437e657de78427691447e6e0daaf8a5cfd0247df0812acb33a7e103b",
+    "platform/include/hakux/extras.h": "07e84024bf44a434135b3aa7aa52d713461ab84d6c9b276fecbf1d5f1e60b5d3",
     "platform/include/hakux/gpu_progress.h": "f5540da60597d1b517af91ea7e0221ed767957af55bf8e52d1156c8444d8a31e",
     "platform/include/hakux/prebuild_budget.h": "be1d025fc4fedb7671b4332b4939d72a33fda22c440bb0d73733060bba3d51f0",
     "platform/include/hakux/menu.h": "05f2e1a6b17d1628c28eb319cadd439cf1b332eafd6e025b6addc6a4d6d7213b",
     "platform/include/hakux/render_scale.h": "07eb60c08272b27d70b5b57754a5778d845cc1ad74e85c84aae370ecb3bb27d9",
-    "tests/menu.c": "d37bc24d014799597f3d6fd0d54f4eaa7ad38e5e050ec85a5fb2650b3438b82c",
+    "tests/lan.c": "770f504d0f2dfd74c01e1ef98b761590499a2523b513d6384c657a343114580d",
+    "tests/menu.c": "2ef0b7e2102d3b9e6ecac2d2aba1921453064ad63f49a30628eda34b51e7f2fa",
     "tests/halfscale.c": "aadf7cbbbfc696bba3f8161da6c50d3229b35d8d991ea1a76c9ab40cb67933c8",
+    "tests/profiles.c": "48827ba3ac5af2b4e57a177d168348d6f082651087eddd3a0350cbb876ac3ab7",
     "tests/xbox2-pscache.c": "09e82aeeb4d09dd05439aebca2b78ef1ee43fec134f13a89c72efdb99208908f",
     "tests/xbox2-host-stubs.c": "bcef65c851d50232851ffaae475a43a2b9a5256333e3248bad6c4f6d7ea7ee64",
+    "tests/extras.c": "a6e093ea2db842477090652084adfae3c3954ed3a798085eb0bb9dd9618c8d0c",
+    "tests/toggle-cheats.c": "60999fc3b60ee4c731716d7fe21612885c4977fb4b3d5084271d7cff39202b14",
+    "tests/png.c": "2bface5531734248de1c059c62f102f5b5afd20db0a1418c7ceb525e687f7b31",
     "tests/xbox2-batch.c": "f96e011f60c44629da051a5ce1cc3fef26f9df6fe1734d518e04a6a5cc889600",
     "tests/menu-stubs/linux/input.h": "674128e0ab8703ee4a40b7645ffdbdb0c054e5bc5ba3236f1b44028a67458d45",
+    "tests/fixtures/vcpu-before/hw/xbox/hle/mem/barrier.c": "e29d2edc2135cf15edfd1c86355b2ac754f838bbcd08f0412e769b929bcfdb1a",
+    "tests/fixtures/vcpu-before/native/kernel/kernel.c": "98f84e0dc07a652e1a3ff702b0854e93352103691e24fe516bde96a74daeb844",
+    "tests/fixtures/vcpu-before/native/kernel/ke.c": "d94e0ecc1cc6ab522565a25dabf25359fdfe5c0a549c100366aa5124aeef53ab",
     "toolchains/trimui.cmake": "37b7e0d5faf95f7b9af3cfb7bc0f6f6719b6538025e55032765ac69ca5a04ea5",
     "toolchains/trimui-xbox2.cmake": "f960140c79da9c781eef7c3a23c15c0f95971f1bd0a5c761c780e0870895afc3",
-    "package/hakux/run.sh": "5b7d14b120741ace792273dc0dc41d3ae39a67f54ce1084ece092082d48a346e"
+    "package/hakux/run.sh": "6a5b09d0232edc2cc1df5742654ac1dce375af8d670db51f8ad9b4bd90dd8829"
   },
   "payload_sha256": {
     "Data/ports/hakux-disc.sh": "09e9081fa8085a2f048894e57cfe3deb1a5305d57e82f68e4a2ab2cb1e5c2029",
-    "Data/ports/hakux/README.txt": "cd298d0b7604eb1cd574f9c571da07904a621fb16f2b777cf820f08865eb947a",
-    "Data/ports/hakux/hakux.aarch64": "04b9f20f6de5cc481ed0b15e8311fadde49cb3422277131cc9d80bf5dadf6a55",
+    "Data/ports/hakux/README.txt": "58ce0310638e8d8e457b7a72f261a0417931602d69e29e2cfcc86d5b433338e2",
+    "Data/ports/hakux/hakux.aarch64": "6f6623f3613a691701b113807c8d01c88670e4aa88d1c695b1091999fd25dd96",
     "Data/ports/hakux/licenses/FEX.license.txt": "f34a779f56b36d22b20e1b990d23e583a6a7ca071331925fa46156441c77a1ee",
     "Data/ports/hakux/licenses/GPL-2.0.txt": "dd3ce02338c3a48abb6ba59b48809f7108a8bd242cb0cc8be90daafa30707c28",
     "Data/ports/hakux/licenses/LGPL-2.1.txt": "31c90ce76b6f5aab90a205851e71d5c27e31c0aa3d7017a4383b98a6fe3f1faa",
@@ -203,7 +203,7 @@
     "Data/ports/hakux/licenses/volk.license.txt": "e85b35831f01da6aa8c029f0a06a0468be143534babe9014e37ee03bf078bf36",
     "Data/ports/hakux/licenses/xxHash.license.txt": "6ffedbc0f7878612d2b23589f1ff2ab15633e1df7963a5d9fc750ec5500c7e7a",
     "Data/ports/hakux/licenses/zlib-LICENSE.txt": "845efc77857d485d91fb3e0b884aaa929368c717ae8186b66fe1ed2495753243",
-    "Data/ports/hakux/run.sh": "a7241e16fc8790ebf475cd05ce72e43ef0f1743bd0da4f006e7f707e588bdbe9",
+    "Data/ports/hakux/run.sh": "d5e362f14874a781d9bd7acbd6dea19ee8bfa26abc97680782fcad1162516e9b",
     "Data/ports/hakux/runtime-mainui.sh": "21637fe6b72bb2176240902d3b98e48b8fee2ec43dee6b681c6a9d4399a4799c",
     "Data/ports/hakux/runtime-swap.sh": "ff3e0477da1e6007711d1b985b4fa6f0555ebda2db3c37c3d5e30ac383827531",
     "Emus/XBOX/config.json": "ed03cbba8243984e89e4d83c3a0849bce2eed8a6386a1766186fc2ea2cae0e5e",
@@ -211,15 +211,47 @@
     "Emus/XBOX/iconsmall.png": "9eb669778fadce09ce502b36c732698339ec56ae58027394b61e13a56d22b245",
     "Emus/XBOX/launch.sh": "545a30a54948188d78fbb30beba51ac3c090a4706446b9ab9e9b4f07eddcebb9"
   },
-  "install_zip_name": "xbox-trimui-smart-pro-v0.1.1.zip",
+  "install_zip_name": "xbox-trimui-smart-pro-v0.1.2.zip",
   "graphics_workaround": {
     "name": "eq_depth_step",
     "default": true,
-    "activation": "launcher environment; existing v0.1 core implementation",
+    "activation": "PowerVR core default and launcher environment; explicit override respected",
     "external_override_respected": true,
     "scope": "PowerVR target; Halo 2 black level geometry and lighting passes"
   },
-  "core_changed": false,
-  "install_zip_sha256": "ea0b04c40606e86001da0acf621c9a63dcc3e646d2b62deab24895602fc799fd",
-  "install_zip_bytes": 2247204
+  "core_changed": true,
+  "lan": {
+    "available": true,
+    "default": "off",
+    "modes": [
+      "off",
+      "lan"
+    ],
+    "label": "LAN: Connections on the network",
+    "restart_required": true,
+    "udp_port": 3075,
+    "two_console_gameplay_tested": false
+  },
+  "per_game_settings": {
+    "key": "title_id.certificate_version",
+    "directory": "profiles",
+    "legacy_files": "preserved inherited defaults",
+    "settings": [
+      "controller-map",
+      "menu-settings",
+      "render-scale",
+      "network-mode"
+    ]
+  },
+  "menu_extras": {
+    "mods": true,
+    "runtime_cheats": true,
+    "game_specific_files_included": false,
+    "new_entries_default": "off",
+    "mod_changes_restart_required": true,
+    "screenshots": "Screenshots/XBOX",
+    "screenshot_format": "opaque RGB PNG; RGB preserved; metadata removed"
+  },
+  "install_zip_sha256": "026e6725804123530223ef2d9c4fc5bba2abdcd123a21cc87dc212a0c6c42bdd",
+  "install_zip_bytes": 2256796
 }

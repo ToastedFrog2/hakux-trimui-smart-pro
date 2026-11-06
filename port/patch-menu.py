@@ -4,6 +4,7 @@ from pathlib import Path
 root=Path(__file__).resolve().parent
 def replace(name,old,new):
     p=root/'source'/name;t=p.read_text()
+    if name=='native/run/xboxrun.c' and old=='    nc_options_apply(&opt);' and '    hakux_menu_init(argc, argv);' in t:return
     if new in t:return
     if old not in t:raise SystemExit('Menu patch context missing: '+name)
     p.write_text(t.replace(old,new))

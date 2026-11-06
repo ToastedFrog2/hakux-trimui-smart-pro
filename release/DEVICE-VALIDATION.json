@@ -1,41 +1,15 @@
 {
-  "core_sha256": "04b9f20f6de5cc481ed0b15e8311fadde49cb3422277131cc9d80bf5dadf6a55",
-  "hardware": "Original TrimUI Smart Pro TG5040",
-  "tests": {
-    "exact_pre_fps_core_restored": true,
-    "halo_ce_startup": true,
-    "fps_menu_option_absent": true,
-    "controller_mapping_menu_display": true,
-    "render_scale_preserved_05": true,
-    "physical_start_select_exit": true
-  },
-  "limits": [
-    "No new FPS benchmark or long-session gameplay validation",
-    "All 16 default input actions verified on host; installer contains no saved mappings or settings",
-    "Automatic swap creation on a fresh physical device remains unverified"
+  "core_sha256": "6f6623f3613a691701b113807c8d01c88670e4aa88d1c695b1091999fd25dd96",
+  "tests": {},
+  "tested_base_core_sha256": "b689bf6e29b374f803800c864d640d1a4478d1187aa5da157464529fa8e8e975",
+  "base_core_checks": [
+    "Halo CE boot, per-game profile display and settings write",
+    "User reports working Halo 2 gameplay and menu",
+    "Framebuffer screenshot capture, followed by host alpha correction"
   ],
-  "configuration": {
-    "automatic_ui_release": true,
-    "menu_toggle": false,
-    "fps_overlay": false,
-    "controller_mapping": true,
-    "scale": 0.5
-  },
-  "prior_device_tested_core": "release/known-working-named-directory/DEVICE-VALIDATION.json",
-  "runtime_update": {
-    "version": "0.1.1",
-    "date": "2026-11-03",
-    "verification": "SSH inspection of installed files and existing log; no new gameplay launch during packaging",
-    "core_matches_v01": true,
-    "launcher_matches_device": true,
-    "ui_music_helper_matches_device": true,
-    "eq_depth_step_enabled_in_device_log": true,
-    "fresh_gameplay_visual_test": false,
-    "live_music_pause_resume_test": false,
-    "square_artifact_investigation": {
-      "result": "No clean fix validated; diagnostic core and format overrides rejected",
-      "normal_core_and_launch_environment_restored": true,
-      "known_remaining_issue": "Halo 2 rectangular shadow/lighting patches around moving objects"
-    }
-  }
+  "limits": [
+    "Final screenshot normalization is host-tested; this exact rebuilt core has not been gameplay-tested",
+    "Two-console System Link gameplay is unverified",
+    "Long-session stability and all-game compatibility are not established"
+  ]
 }

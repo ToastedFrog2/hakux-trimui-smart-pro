@@ -53,12 +53,20 @@ rm -f "$APP/relaunch.bin" "$APP/menu-restart"
 RESULT=0
 while :; do
     if command -v hakux_mainui_apply >/dev/null 2>&1; then hakux_mainui_apply; fi
-    set -- "$ROM" "hdd=$APP/hdd"
+    # Validate the saved mode; never evaluate settings as shell commands.
+    NETWORK=off
+    if [ -r "$APP/network-mode" ]; then
+        SAVED_NETWORK=$(cat "$APP/network-mode")
+        case "$SAVED_NETWORK" in off|lan) NETWORK=$SAVED_NETWORK;; esac
+    fi
+    set -- "$ROM" "hdd=$APP/hdd" "net=$NETWORK"
     if [ "$RESULT" = 10 ]; then
         set -- "$@" relaunch
     elif [ "$RESULT" = 20 ]; then
-        SCALE=$(cat "$APP/render-scale")
-        case "$SCALE" in 0.35|0.5|0.75|1|2|3|4) export HAKUX_RENDER_SCALE="$SCALE";; esac
+        if [ -r "$APP/render-scale" ]; then
+            SCALE=$(cat "$APP/render-scale")
+            case "$SCALE" in 0.35|0.5|0.75|1|2|3|4) export HAKUX_RENDER_SCALE="$SCALE";; esac
+        fi
         REQUEST=$(cat "$APP/menu-restart")
         rm -f "$APP/menu-restart"
         [ "$REQUEST" = restart ] || { RESULT=2; break; }

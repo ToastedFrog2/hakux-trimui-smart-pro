@@ -4,7 +4,7 @@ from pathlib import Path
 import hashlib,subprocess
 root=Path(__file__).resolve().parent
 assert (root/'source/native/core/xbe_load.c').is_file(),'Unpack the pinned source first'
-order=['source','xbox2','halfscale','menu','recovery','shader-compat','memory','objects','halo2-save','frame-skip','scale075']
+order=['source','xbox2','halfscale','menu','recovery','shader-compat','memory','objects','halo2-save','frame-skip','scale075','powervr-eqdepth','vcpu-safe','extras','profiles','cheat-toggle']
 def apply():
     for name in order:subprocess.run(['python3',str(root/f'patch-{name}.py')],check=True)
 def hashes():

@@ -31,3 +31,10 @@ mainui-release
 
 controller-map
 controller-map.tmp
+
+network-mode
+network-mode.tmp
+
+/port/package/hakux/profiles/
+**/enabled-cheats
+**/enabled

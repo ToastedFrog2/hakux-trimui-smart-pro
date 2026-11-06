@@ -4,11 +4,11 @@ cd "$(dirname "$0")"
 export ZIG="${ZIG:-$(command -v zig || true)}"
 [ -n "$ZIG" ] || { echo 'Zig 0.16.0 is required.' >&2; exit 1; }
 [ -f source/native/CMakeLists.txt ] || { echo 'Run python3 port/unpack-sources.py from the repository root first.' >&2; exit 1; }
-[ -f deps/lib/libSDL2.so ] || { echo 'Copy the target firmware SDL2 library to port/deps/lib/libSDL2.so; see docs/BUILDING.md.' >&2; exit 1; }
+[ -f deps/lib/libSDL2.so ] || { echo 'Copy the target firmware SDL2 library to port/deps/lib/libSDL2.so; see Building from source in README.md.' >&2; exit 1; }
 STRIP_TOOL="${TRIMUI_STRIP:-$(command -v llvm-strip || command -v aarch64-linux-gnu-strip || true)}"
 [ -n "$STRIP_TOOL" ] || { echo 'Set TRIMUI_STRIP to an LLVM or AArch64 strip executable.' >&2; exit 1; }
 df -h .
-for patch in source xbox2 halfscale menu recovery shader-compat memory objects halo2-save frame-skip scale075; do
+for patch in source xbox2 halfscale menu recovery shader-compat memory objects halo2-save frame-skip scale075 powervr-eqdepth vcpu-safe extras profiles cheat-toggle; do
     python3 "patch-$patch.py"
 done
 cmake -S source/native -B build/core -G Ninja \

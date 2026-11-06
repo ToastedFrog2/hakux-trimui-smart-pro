@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "state": "Pinned modified baseline source. Apply the current port patch sequence and platform files through port/build-xbox2.sh, including frame-skip, Win32 named-directory handling and the separate 0.75x scale decoder.",
+  "state": "Pinned modified baseline source. Apply the current port patch sequence and platform files through port/build-xbox2.sh, including frame-skip, Win32 named-directory handling and the separate 0.75x scale decoder. Optional upstream game-specific mod assets and their generators are excluded; all native port build inputs are retained.",
   "upstream": {
     "source": {
       "url": "https://github.com/rfandango/hakuX.git",
@@ -46,10 +46,10 @@
   "archives": [
     {
       "file": "hakux-patched.tar.gz",
-      "sha256": "09d8298496a409763d64b227852363e56e2d7f3e6ac795403979ee4a422a5e18",
-      "archive_bytes": 8684483,
-      "source_files": 492,
-      "expanded_bytes": 29544279
+      "sha256": "fffcef2cc272623edcf2b4e47ffdcfe176ffdc921d8dbbd9341abe97da83cfc5",
+      "archive_bytes": 8630888,
+      "source_files": 454,
+      "expanded_bytes": 29305641
     },
     {
       "file": "fex-patched.tar.gz",
@@ -73,5 +73,6 @@
       "expanded_bytes": 97943717
     }
   ],
-  "not_bundled": "System SDL2 shared library; use the target firmware library for linking. Vendor Vulkan driver remains on device."
+  "not_bundled": "System SDL2 shared library; use the target firmware library for linking. Vendor Vulkan driver remains on device.",
+  "game_specific_mod_assets_included": false
 }

@@ -1,9 +1,12 @@
 /* TrimUI's menu shares the Vulkan presenter. No second display owner. */
 #ifdef HAKUX_XBOX2
 #include "hakux/menu.h"
+#include "hakux/extras.h"
+#include "hakux/profile.h"
 #include "hakux/render_scale.h"
 #include "native/app/app.h"
 #include "native/core/irq.h"
+#include "native/net/net.h"
 #include "hw/xbox/hle/host.h"
 #include <SDL.h>
 #include <fcntl.h>
@@ -14,8 +17,9 @@
 #include <string.h>
 #include <unistd.h>
 
-enum { RESUME, SCALE, FRAME_SKIP, RESTART, ASPECT, FILTER, FXAA, COLOR, CONTROLS, QUIT, ROWS };
+enum { RESUME, SCALE, FRAME_SKIP, LAN, RESTART, ASPECT, FILTER, FXAA, COLOR, CONTROLS, EXTRAS, SNAPSHOT, QUIT, ROWS };
 enum { MAP_ACTIONS=16, MAP_RESET=16, MAP_BACK=17, MAP_ROWS=18, MAP_VISIBLE=9 };
+enum { SETTINGS_VISIBLE=9 };
 /* Output order matches NcPadState: eight analog buttons, eight digital bits.
  * Guide is intentionally absent; menu navigation always uses physical inputs. */
 static const SDL_GameControllerButton map_buttons[MAP_ACTIONS]={
@@ -38,9 +42,9 @@ static const char *aspect_names[] = {"AUTO", "4:3", "16:9", "STRETCH"};
 static const char *color_names[] = {"ORIGINAL", "WARM", "COOL", "BRIGHT"};
 static pthread_mutex_t mu = PTHREAD_MUTEX_INITIALIZER;
 static struct {
-    bool open, ready, key, raw_key, guide, block, paused_before, confirm, mapping;
-    int map_row;
-    int row, scale, aspect, filter, fxaa, color, frame_skip;
+    bool open, ready, key, raw_key, guide, block, paused_before, confirm, mapping, extras, capture_hide;
+    int map_row, extra_row;
+    int row, scale, aspect, filter, fxaa, color, frame_skip, lan;
     unsigned previous, repeat_button;
     Uint32 repeat_at;
     uint64_t revision;
@@ -50,13 +54,15 @@ static int events[8], event_count;
 
 static bool write_setting(const char *name, const char *value)
 {
-    char path[128]; snprintf(path,sizeof(path),"%s.tmp",name);
+    char destination[160],path[170];
+    if(!hakux_profile_path(name,destination,sizeof(destination)))return false;
+    snprintf(path,sizeof(path),"%s.tmp",destination);
     FILE *f=fopen(path,"wb");
     if (!f) return false;
     bool ok=fprintf(f,"%s\n",value)>0 && fflush(f)==0;
     if (ok) ok=fsync(fileno(f))==0;
     if (fclose(f)) ok=false;
-    if (ok) ok=rename(path,name)==0;
+    if (ok) ok=rename(path,destination)==0;
     if (!ok) unlink(path);
     return ok;
 }
@@ -75,7 +81,7 @@ static void map_defaults(void)
 static void map_load(void)
 {
     map_defaults();
-    FILE *f=fopen("controller-map","r");
+    FILE *f=hakux_profile_open("controller-map");
     if(!f)return;
     int version,n;unsigned char candidate[MAP_ACTIONS];
     bool ok=fscanf(f,"%d",&version)==1 && version==1;
@@ -111,9 +117,10 @@ void hakux_menu_map_buttons(SDL_GameController *pad,uint8_t values[16])
 void hakux_menu_init(int argc, char **argv)
 {
     map_load();
+    ui.lan=nc_net_mode()==NC_NET_LAN;
     float current=hle_scale_clamp(hle_host_render_scale());
     ui.scale=current==.35f?0:current==.5f?1:current==.75f?2:3;
-    FILE *f=fopen("menu-settings","r");
+    FILE *f=hakux_profile_open("menu-settings");
     int a,b,c,d,e=0;
     if(f) {
         int n=fscanf(f,"%d %d %d %d %d",&a,&b,&c,&d,&e);
@@ -129,15 +136,19 @@ void hakux_menu_init(int argc, char **argv)
         int fd=open(path,O_RDONLY|O_NONBLOCK|O_CLOEXEC);
         if(fd>=0)events[event_count++]=fd;
     }
-    fprintf(stderr,"hakuX menu: Menu/Guide opens settings; resolution changes restart the game\n");
+    fprintf(stderr,"hakuX menu: Menu/Guide opens settings; scale and LAN changes restart the game\n");
 }
+
+void hakux_menu_capture_hide(bool hide) { pthread_mutex_lock(&mu);ui.capture_hide=hide;ui.revision++;pthread_mutex_unlock(&mu); }
+
+void hakux_menu_notice(const char *message) { pthread_mutex_lock(&mu);snprintf(ui.status,sizeof(ui.status),"%s",message);ui.revision++;pthread_mutex_unlock(&mu); }
 
 void hakux_menu_ready(void) { pthread_mutex_lock(&mu);ui.ready=true;pthread_mutex_unlock(&mu); }
 void hakux_menu_key(bool down) { pthread_mutex_lock(&mu);ui.key=down;pthread_mutex_unlock(&mu); }
 
 static void toggle(bool open)
 {
-    ui.open=open;ui.confirm=false;ui.mapping=false;ui.block=true;ui.status[0]=0;ui.revision++;
+    ui.open=open;ui.confirm=false;ui.mapping=false;ui.extras=false;ui.block=true;ui.status[0]=0;ui.revision++;
     if(open) { ui.paused_before=nc_paused();nc_pause_set(true); }
     else nc_pause_set(ui.paused_before);
     fprintf(stderr,"hakuX menu: %s\n",open?"open":"resume");
@@ -145,17 +156,20 @@ static void toggle(bool open)
 
 static void restart(void)
 {
-    /* Render surfaces are recreated by a fresh process at the chosen scale. */
+    /* Render surfaces and the network backend are initialized at boot. */
     char scale[20];snprintf(scale,sizeof(scale),"%g",scales[ui.scale]);
     if(!write_setting("render-scale",scale)) {
         snprintf(ui.status,sizeof(ui.status),"COULD NOT SAVE RENDER SCALE");return;
+    }
+    if(!write_setting("network-mode",ui.lan?"lan":"off")) {
+        snprintf(ui.status,sizeof(ui.status),"COULD NOT SAVE LAN SETTING");return;
     }
     if(!write_setting("menu-restart","restart")) {
         snprintf(ui.status,sizeof(ui.status),"COULD NOT WRITE RESTART REQUEST");return;
     }
     /* The launcher starts a fresh process after this one closes every GPU
      * and input descriptor. MainUI remains suspended across the restart. */
-    fprintf(stderr,"hakuX menu: restarting scale=%s\n",scale);
+    fprintf(stderr,"hakuX menu: restarting scale=%s net=%s\n",scale,ui.lan?"lan":"off");
     _exit(20);
 }
 
@@ -165,6 +179,7 @@ static void change(int delta)
     switch(ui.row) {
         case SCALE:p=&ui.scale;limit=sizeof(scales)/sizeof(scales[0]);break;
         case FRAME_SKIP:p=&ui.frame_skip;limit=2;break;
+        case LAN:p=&ui.lan;limit=2;break;
         case ASPECT:p=&ui.aspect;limit=4;break;
         case FILTER:p=&ui.filter;limit=2;break;
         case FXAA:p=&ui.fxaa;limit=2;break;
@@ -172,7 +187,7 @@ static void change(int delta)
         default:return;
     }
     *p=(*p+delta+limit)%limit;
-    if(ui.row==SCALE) snprintf(ui.status,sizeof(ui.status),"SELECT APPLY SCALE TO RESTART THE GAME");
+    if(ui.row==SCALE || ui.row==LAN) snprintf(ui.status,sizeof(ui.status),"SELECT APPLY SETTINGS TO RESTART THE GAME");
     else if(!persist())snprintf(ui.status,sizeof(ui.status),"SETTINGS CHANGED BUT COULD NOT BE SAVED");
     else if(ui.row==FRAME_SKIP)snprintf(ui.status,sizeof(ui.status),"DISPLAY SKIP APPLIED - GAME RENDERING IS PRESERVED");
     else snprintf(ui.status,sizeof(ui.status),"DISPLAY SETTING APPLIED");
@@ -202,7 +217,11 @@ bool hakux_menu_input(SDL_GameController *pad)
     if(buttons!=ui.previous) {ui.repeat_button=buttons&15;ui.repeat_at=now+350;}
     else if(ui.repeat_button && (Sint32)(now-ui.repeat_at)>=0) {edge|=ui.repeat_button;ui.repeat_at=now+140;}
     ui.previous=buttons;
-    if(ui.open && ui.mapping) {
+    if(ui.open && ui.extras) {
+        if(edge&32) {ui.extras=false;ui.status[0]=0;ui.revision++;}
+        else if(edge&3) {ui.extra_row=(ui.extra_row+(edge&1?-1:1)+hakux_extras_rows())%hakux_extras_rows();ui.status[0]=0;ui.revision++;}
+        else if(edge&(12|16)) {if(hakux_extras_choose(ui.extra_row,ui.status,sizeof(ui.status)))ui.extras=false;ui.revision++;}
+    } else if(ui.open && ui.mapping) {
         if(edge&32) {ui.mapping=false;ui.status[0]=0;ui.revision++;}
         else if(edge&3) {ui.map_row=(ui.map_row+(edge&1?-1:1)+MAP_ROWS)%MAP_ROWS;ui.status[0]=0;ui.revision++;}
         else if(edge&(12|16)) {
@@ -221,6 +240,8 @@ bool hakux_menu_input(SDL_GameController *pad)
         else if(edge&12) {ui.confirm=false;change(edge&4?-1:1);ui.revision++;}
         else if(edge&16) {
             if(ui.row==RESUME)toggle(false);
+            else if(ui.row==EXTRAS) {ui.extras=true;ui.extra_row=0;ui.status[0]=0;}
+            else if(ui.row==SNAPSHOT) {snprintf(ui.status,sizeof(ui.status),hakux_extras_screenshot()?"CAPTURING GAME IMAGE...":"SCREENSHOT ALREADY IN PROGRESS");}
             else if(ui.row==CONTROLS) {ui.mapping=true;ui.map_row=0;ui.status[0]=0;}
             else if(ui.row==RESTART || ui.row==QUIT) {
                 if(!ui.confirm)ui.confirm=true;
@@ -334,14 +355,20 @@ static void clear_rects(VkCommandBuffer cb,const struct VolkDeviceTable *t,float
 void hakux_menu_draw(VkCommandBuffer cb,const struct VolkDeviceTable *t,uint32_t w,uint32_t h)
 {
     pthread_mutex_lock(&mu);
-    if(!ui.open) {pthread_mutex_unlock(&mu);return;}
+    if(!ui.open || ui.capture_hide) {pthread_mutex_unlock(&mu);return;}
     box(100,36,1080,648,w,h);clear_rects(cb,t,.025f,.04f,.07f);
     int first=ui.map_row>=MAP_VISIBLE?ui.map_row-MAP_VISIBLE+1:0;
-    box(120,125+(ui.mapping?ui.map_row-first:ui.row)*40,1040,34,w,h);clear_rects(cb,t,.08f,.22f,.34f);
-    text(140,64,ui.mapping?"XBOX - CONTROLLER MAPPING":"XBOX - SETTINGS",3,w,h);
-    char lines[ROWS][80]={[RESUME]="RESUME GAME",[RESTART]="APPLY SCALE AND RESTART GAME",[CONTROLS]="CONTROLLER MAPPING"};
+    int top=ui.row>=SETTINGS_VISIBLE?ui.row-SETTINGS_VISIBLE+1:0;
+    int extra_top=ui.extra_row>=MAP_VISIBLE?ui.extra_row-MAP_VISIBLE+1:0;
+    box(120,125+(ui.mapping?ui.map_row-first:ui.extras?ui.extra_row-extra_top:ui.row-top)*40,1040,34,w,h);clear_rects(cb,t,.08f,.22f,.34f);
+    text(140,64,ui.mapping?"XBOX - CONTROLLER MAPPING":ui.extras?"XBOX - MODS AND CHEATS":"XBOX - SETTINGS",3,w,h);
+    if(!ui.extras && *hakux_profile_key()) {
+        char scope[64];snprintf(scope,sizeof(scope),"GAME SETTINGS: %s",hakux_profile_key());text(144,100,scope,2,w,h);
+    }
+    char lines[ROWS][80]={[RESUME]="RESUME GAME",[RESTART]="APPLY SETTINGS AND RESTART GAME",[CONTROLS]="CONTROLLER MAPPING",[EXTRAS]="MODS AND CHEATS",[SNAPSHOT]="TAKE SCREENSHOT"};
     snprintf(lines[SCALE],80,"RENDER SCALE: %s (RESTART)",scale_names[ui.scale]);
     snprintf(lines[FRAME_SKIP],80,"FRAME SKIP: %s",ui.frame_skip?"SKIP 1 (DISPLAY)":"OFF");
+    snprintf(lines[LAN],80,"LAN: %s",ui.lan?"CONNECTIONS ON THE NETWORK":"OFF");
     snprintf(lines[ASPECT],80,"SCREEN SHAPE: %s",aspect_names[ui.aspect]);
     snprintf(lines[FILTER],80,"UPSCALE FILTER: %s",ui.filter?"SGSR":"BILINEAR");
     snprintf(lines[FXAA],80,"EDGE SMOOTHING: %s",ui.fxaa?"FXAA ON":"OFF");
@@ -354,9 +381,14 @@ void hakux_menu_draw(VkCommandBuffer cb,const struct VolkDeviceTable *t,uint32_t
             else snprintf(line,sizeof(line),"%s",i==MAP_RESET?"RESET TO DEFAULTS":"BACK TO SETTINGS");
             text(144,133+(i-first)*40,line,3,w,h);
         }
-    } else for(int i=0;i<ROWS;i++)text(144,133+i*40,lines[i],3,w,h);
+    } else if(ui.extras) {
+        text(144,100,hakux_extras_game_key(),2,w,h);
+        unsigned rows=hakux_extras_rows();
+        for(unsigned i=extra_top;i<rows && i<(unsigned)extra_top+MAP_VISIBLE;i++) {char line[80];hakux_extras_line(i,line,sizeof(line));text(144,133+(i-extra_top)*40,line,3,w,h);}
+        if(rows==2)text(144,470,"NO MODS OR CHEATS FOR THIS GAME VERSION",2,w,h);
+    } else for(int i=top;i<ROWS && i<top+SETTINGS_VISIBLE;i++)text(144,133+(i-top)*40,lines[i],3,w,h);
     text(144,550,"UP/DOWN SELECT   LEFT/RIGHT CHANGE   A CHOOSE",2,w,h);
-    text(144,574,ui.mapping?"B BACK   MENU RESUME   START AND SELECT HOLD TO EXIT":"B OR MENU RESUME   SCALE CHANGES RESTART GAME",2,w,h);
+    text(144,574,(ui.mapping||ui.extras)?"B BACK   MENU RESUME   START AND SELECT HOLD TO EXIT":"B OR MENU RESUME   SCALE AND LAN CHANGES RESTART GAME",2,w,h);
     text(144,618,ui.confirm?"A CONFIRM - UNSAVED PROGRESS WILL BE LOST : B CANCEL":ui.status,2,w,h);
     clear_rects(cb,t,.88f,.94f,1);
     pthread_mutex_unlock(&mu);
