@@ -1,13 +1,13 @@
 {
   "name": "hakuX for TrimUI Smart Pro \u2014 Xbox",
-  "version": "0.1.2",
-  "core_build": "per-game-menu-opaque-capture",
-  "core_sha256": "6f6623f3613a691701b113807c8d01c88670e4aa88d1c695b1091999fd25dd96",
+  "version": "0.1.3",
+  "core_build": "halo2-stall-fix",
+  "core_sha256": "6434bfb6bb80a7ab77c1d1e22628b3fc60e39e78c80131d5d4520ee1276f4224",
   "hardware": "original TrimUI Smart Pro TG5040 / Cortex-A53 / PowerVR GE8300 / 1 GiB RAM",
   "default_render_scale": 0.5,
   "device_tested_core": false,
   "device_smoke_tested": false,
-  "package_revision": "per-game-menu-1",
+  "package_revision": "halo2-stall-1",
   "fresh_install_defaults": {
     "render_scale": 0.5,
     "controller_mapping": "identity; L3 and R3 are Xbox stick clicks",
@@ -70,18 +70,13 @@
     "existing_configuration_preserved": true,
     "creation_device_tested": false
   },
-  "validation": "Host regressions passed; prior per-game core has device menu/gameplay reports; final capture correction is host-tested",
+  "validation": "Source correspondence and host regressions passed; Halo 2 fix is user-reported; no independent new gameplay session during packaging",
   "device_validation": {
-    "core_sha256": "6f6623f3613a691701b113807c8d01c88670e4aa88d1c695b1091999fd25dd96",
+    "core_sha256": "6434bfb6bb80a7ab77c1d1e22628b3fc60e39e78c80131d5d4520ee1276f4224",
     "tests": {},
-    "tested_base_core_sha256": "b689bf6e29b374f803800c864d640d1a4478d1187aa5da157464529fa8e8e975",
-    "base_core_checks": [
-      "Halo CE boot, per-game profile display and settings write",
-      "User reports working Halo 2 gameplay and menu",
-      "Framebuffer screenshot capture, followed by host alpha correction"
-    ],
+    "validation_source": "User-supplied Halo 2 fix report; exact core matches the supplied build",
     "limits": [
-      "Final screenshot normalization is host-tested; this exact rebuilt core has not been gameplay-tested",
+      "No independent new gameplay session during packaging",
       "Two-console System Link gameplay is unverified",
       "Long-session stability and all-game compatibility are not established"
     ]
@@ -99,6 +94,7 @@
     "dependencies.tar.gz": "75f5bbffb6c71406a9c7d01a148277ca77da0aa806206ad8dffe011af67620ff"
   },
   "port_source_sha256": {
+    "patch-stall-fix.py": "48976e0ae75109ff2af9f2059c199f0625a41b2a92f3272181420e891d73199c",
     "patch-halo2-save.py": "e6e5f051670edc4b357d2780c88cffee19025c60898028672741964184523384",
     "verify-vcpu-safe.py": "6a9875d6cbfed56752f01811c65b188e19a150e1c0b577723ddd6735a379ed4f",
     "verify-cheat-toggle.py": "41114f2d928212bdb908b5fd0323695618d061d89606d24c9e5b0bcc3f2a7834",
@@ -112,13 +108,14 @@
     "patch-recovery.py": "2f54d3ff972e8fa903c4419bab9c6190c955b985495dad7a22ada4d354630c00",
     "patch-halfscale.py": "938f749c8dacaf76502ab26ce3902d87a773c46fd20880639d56b946f7c9a186",
     "patch-vcpu-safe.py": "fc7ca2efb443a0cc6a15e45017d4df3c34207fb2a03e9b09e589d7bb76c69c21",
-    "build-xbox2.sh": "993a2a2a4586e60918ed7917b79635cfa4c8639db94da4d4441b9be79f6d741a",
+    "build-xbox2.sh": "6d24e4592449a219f696a45abd201f7750891166f42822e2e600b22841222a4e",
+    "verify-stall-fix.py": "c255b798e6e680e1c31002d7eba95fd862d21ae22daa02d2dda6aca3fa1e9493",
     "patch-shader-compat.py": "fee4ca70b647c2c521b4e27150cfee30a00ec7fba3a2baa6a87077e2b2b7f021",
     "unpack-sources.py": "ba4f8d91f7ee18dd8bac6622e20f55b6b5c941189f287ca3803f1256163fd013",
     "verify-frame-skip.py": "1f9762117e8ea6cc9380a5e5466da271bb82227595919ee3d7c5b33052a77742",
     "verify-png.py": "549a1666d3a145500face5d242e0f0a1048420cbaa8992a4ce3de3f62bd3c657",
     "patch-objects.py": "ab2218af2aff586939a57b826c1b79b297f3907ce6dae3f74ff3cfb44d08495b",
-    "verify-build-patches.py": "2ea4fa930f395bbfceed4b984febbb54d2d74b90afc028a047ecc4d3d4f72b78",
+    "verify-build-patches.py": "4a4b459f090c4a080dd491cb1d8d107d40745203b902d71c0ccb2ca227b467af",
     "patch-xbox2.py": "7abf89a4bd569f05b907738bc28ea70239d2dc5df8e82d450cb350f48b8126cc",
     "verify-memory-prebuild.py": "a3871e24edebe09b3043753b71c3dff40846209c7c4c2e55c97af601c0c1606d",
     "verify-xbox2.py": "73f396b6a9a74688faa411441af4efe84636ebb0ac0074904717fdb24139f58c",
@@ -178,8 +175,8 @@
   },
   "payload_sha256": {
     "Data/ports/hakux-disc.sh": "09e9081fa8085a2f048894e57cfe3deb1a5305d57e82f68e4a2ab2cb1e5c2029",
-    "Data/ports/hakux/README.txt": "58ce0310638e8d8e457b7a72f261a0417931602d69e29e2cfcc86d5b433338e2",
-    "Data/ports/hakux/hakux.aarch64": "6f6623f3613a691701b113807c8d01c88670e4aa88d1c695b1091999fd25dd96",
+    "Data/ports/hakux/README.txt": "2dd70387773970d5017c29d656460635ed18518ade76a4fff9468ca32ef87c3e",
+    "Data/ports/hakux/hakux.aarch64": "6434bfb6bb80a7ab77c1d1e22628b3fc60e39e78c80131d5d4520ee1276f4224",
     "Data/ports/hakux/licenses/FEX.license.txt": "f34a779f56b36d22b20e1b990d23e583a6a7ca071331925fa46156441c77a1ee",
     "Data/ports/hakux/licenses/GPL-2.0.txt": "dd3ce02338c3a48abb6ba59b48809f7108a8bd242cb0cc8be90daafa30707c28",
     "Data/ports/hakux/licenses/LGPL-2.1.txt": "31c90ce76b6f5aab90a205851e71d5c27e31c0aa3d7017a4383b98a6fe3f1faa",
@@ -211,7 +208,7 @@
     "Emus/XBOX/iconsmall.png": "9eb669778fadce09ce502b36c732698339ec56ae58027394b61e13a56d22b245",
     "Emus/XBOX/launch.sh": "545a30a54948188d78fbb30beba51ac3c090a4706446b9ab9e9b4f07eddcebb9"
   },
-  "install_zip_name": "xbox-trimui-smart-pro-v0.1.2.zip",
+  "install_zip_name": "xbox-trimui-smart-pro-v0.1.3.zip",
   "graphics_workaround": {
     "name": "eq_depth_step",
     "default": true,
@@ -252,6 +249,14 @@
     "screenshots": "Screenshots/XBOX",
     "screenshot_format": "opaque RGB PNG; RGB preserved; metadata removed"
   },
-  "install_zip_sha256": "026e6725804123530223ef2d9c4fc5bba2abdcd123a21cc87dc212a0c6c42bdd",
-  "install_zip_bytes": 2256796
+  "halo2_update": {
+    "texture_limit": 768,
+    "upload_arena_mib": 32,
+    "readback_buffer_mib": 4,
+    "streaming_rearm_limit": 8,
+    "published_clock_read_budget": 64,
+    "installer_changes_system_swappiness": false
+  },
+  "install_zip_sha256": "ec779748bcd1834dc849bfa9f6d75d50e234d7b81e6aabb558fd714a6674bc42",
+  "install_zip_bytes": 2256841
 }

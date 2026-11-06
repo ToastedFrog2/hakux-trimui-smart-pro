@@ -1,15 +1,16 @@
 {
-  "core_sha256": "6f6623f3613a691701b113807c8d01c88670e4aa88d1c695b1091999fd25dd96",
+  "core_sha256": "6434bfb6bb80a7ab77c1d1e22628b3fc60e39e78c80131d5d4520ee1276f4224",
   "host_tests": {
     "profiles": "Actual XDVDFS identity, certificate-version isolation, inherited defaults, scale/LAN validation and descriptor ownership",
     "menu": "Actual navigation, pause/resume, remapping, per-game persistence, bounded rendering and confirmed restart",
     "native_cheats": "Original engine regressions plus guarded toggle8 restoration, unmapped memory and existing-state preservation under sanitizers",
     "screenshot": "Actual asynchronous request and PNG normalization: RGB/RGBA, all five filters, exact RGB, opaque output, metadata removal, malformed rejection under sanitizers",
     "vcpu_safety": "Actual time expiry, copied-buffer protection and common MMIO path; faulty variants reproduce the prior failures",
-    "source_correspondence": "Full clean source plus patches matches the build inputs; applying all patches twice is idempotent"
+    "source_correspondence": "Full clean source plus patches matches the build inputs; applying all patches twice is idempotent",
+    "halo2_stall": "Actual TrimUI/original memory limits, eight-arm range cap, per-frame repetition and 64-call published-clock budget with periodic expiry checks under sanitizers"
   },
   "limits": [
-    "Final screenshot normalization is host-tested; this exact rebuilt core has not been gameplay-tested",
+    "No independent new gameplay session during packaging",
     "Two-console System Link gameplay is unverified",
     "Long-session stability and all-game compatibility are not established"
   ]

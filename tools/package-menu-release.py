@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
-"""Build the v0.1.2 installer from the retained v0.1.1 runtime and current core."""
+"""Build a menu release from the retained v0.1.1 runtime and current core."""
 from pathlib import Path
 import argparse,hashlib,json,struct,zipfile
 r=Path(__file__).resolve().parents[1]
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('--core',type=Path,required=True)
-p.add_argument('--output',type=Path,default=r/'release/xbox-trimui-smart-pro-v0.1.2.zip')
-a=p.parse_args();sha=lambda b:hashlib.sha256(b).hexdigest();app='Data/ports/hakux/'
+p.add_argument('--version',choices=['0.1.2','0.1.3'],default='0.1.3')
+p.add_argument('--output',type=Path)
+a=p.parse_args()
+if a.output is None:a.output=r/('release/xbox-trimui-smart-pro-v'+a.version+'.zip')
+sha=lambda b:hashlib.sha256(b).hexdigest();app='Data/ports/hakux/'
 core=a.core.read_bytes()
 assert core[:4]==b'\x7fELF' and struct.unpack_from('<H',core,18)[0]==183
 assert b'/Users/' not in core and b'SHOW FPS:' not in core
@@ -58,7 +61,8 @@ PowerVR eq_depth_step remains enabled. Rendering faults, compilation pauses,
 loading blockers, thermal slowdown and crashes remain possible. No universal
 30 FPS guarantee. See README and docs for build instructions and limitations.
 '''
-m.update(version='0.1.2',package_revision='per-game-menu-1',core_build='per-game-menu-opaque-capture',
+payload[app+'README.txt']=payload[app+'README.txt'].replace(b'v0.1.2',('v'+a.version).encode())
+m.update(version=a.version,package_revision='halo2-stall-1' if a.version=='0.1.3' else 'per-game-menu-1',core_build='halo2-stall-fix' if a.version=='0.1.3' else 'per-game-menu-opaque-capture',
  core_sha256=sha(core),core_changed=True,device_tested_core=False,device_smoke_tested=False,
  install_zip_name=a.output.name,validation='Host regressions passed; prior per-game core has device menu/gameplay reports; final capture correction is host-tested')
 m['fresh_install_defaults']['lan']='off'
@@ -69,6 +73,11 @@ m['menu_extras']={'mods':True,'runtime_cheats':True,'game_specific_files_include
 m['device_validation']={'core_sha256':sha(core),'tests':{},'tested_base_core_sha256':'b689bf6e29b374f803800c864d640d1a4478d1187aa5da157464529fa8e8e975',
  'base_core_checks':['Halo CE boot, per-game profile display and settings write','User reports working Halo 2 gameplay and menu','Framebuffer screenshot capture, followed by host alpha correction'],
  'limits':['Final screenshot normalization is host-tested; this exact rebuilt core has not been gameplay-tested','Two-console System Link gameplay is unverified','Long-session stability and all-game compatibility are not established']}
+if a.version=='0.1.3':
+ m['validation']='Source correspondence and host regressions passed; Halo 2 fix is user-reported; no independent new gameplay session during packaging'
+ m['halo2_update']={'texture_limit':768,'upload_arena_mib':32,'readback_buffer_mib':4,'streaming_rearm_limit':8,'published_clock_read_budget':64,'installer_changes_system_swappiness':False}
+ m['device_validation']={'core_sha256':sha(core),'tests':{},'validation_source':'User-supplied Halo 2 fix report; exact core matches the supplied build',
+  'limits':['No independent new gameplay session during packaging','Two-console System Link gameplay is unverified','Long-session stability and all-game compatibility are not established']}
 m['graphics_workaround']['activation']='PowerVR core default and launcher environment; explicit override respected'
 m['source_archives']={entry['file']:entry['sha256'] for entry in json.loads((r/'sources/SOURCES.json').read_text())['archives']}
 m['port_source_sha256']={str(f.relative_to(r/'port')):sha(f.read_bytes()) for f in (r/'port').rglob('*') if f.is_file() and f.suffix in {'.c','.h','.inc','.py','.sh','.cmake'} and not any(v in {'source','deps','build','dist','__pycache__'} for v in f.relative_to(r/'port').parts)}
@@ -92,6 +101,7 @@ host={'core_sha256':sha(core),'host_tests':{'profiles':'Actual XDVDFS identity, 
  'screenshot':'Actual asynchronous request and PNG normalization: RGB/RGBA, all five filters, exact RGB, opaque output, metadata removal, malformed rejection under sanitizers',
  'vcpu_safety':'Actual time expiry, copied-buffer protection and common MMIO path; faulty variants reproduce the prior failures',
  'source_correspondence':'Full clean source plus patches matches the build inputs; applying all patches twice is idempotent'},'limits':m['device_validation']['limits']}
+if a.version=='0.1.3':host['host_tests']['halo2_stall']='Actual TrimUI/original memory limits, eight-arm range cap, per-frame repetition and 64-call published-clock budget with periodic expiry checks under sanitizers'
 (r/'release/HOST-VALIDATION.json').write_text(json.dumps(host,indent=2)+'\n')
 files=[a.output,r/'release/BUILD.json',r/'release/HOST-VALIDATION.json',r/'release/DEVICE-VALIDATION.json']
 (r/'release/SHA256SUMS').write_text(''.join(sha(f.read_bytes())+'  '+f.name+'\n' for f in files))

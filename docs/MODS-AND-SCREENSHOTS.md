@@ -111,7 +111,7 @@ To package the rebuilt core:
 python3 tools/package-menu-release.py --core port/dist/hakux.aarch64
 ```
 
-The output is `release/xbox-trimui-smart-pro-v0.1.2.zip`. Copy its
+The output is `release/xbox-trimui-smart-pro-v0.1.3.zip`. Copy its
 `Data` and `Emus` directories to the SD card root, merging folders with the
 game closed. Existing settings, saves and user-supplied files are preserved.
 Keep a known working build available while testing.

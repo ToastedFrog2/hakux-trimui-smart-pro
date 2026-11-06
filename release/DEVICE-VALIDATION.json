@@ -1,14 +1,9 @@
 {
-  "core_sha256": "6f6623f3613a691701b113807c8d01c88670e4aa88d1c695b1091999fd25dd96",
+  "core_sha256": "6434bfb6bb80a7ab77c1d1e22628b3fc60e39e78c80131d5d4520ee1276f4224",
   "tests": {},
-  "tested_base_core_sha256": "b689bf6e29b374f803800c864d640d1a4478d1187aa5da157464529fa8e8e975",
-  "base_core_checks": [
-    "Halo CE boot, per-game profile display and settings write",
-    "User reports working Halo 2 gameplay and menu",
-    "Framebuffer screenshot capture, followed by host alpha correction"
-  ],
+  "validation_source": "User-supplied Halo 2 fix report; exact core matches the supplied build",
   "limits": [
-    "Final screenshot normalization is host-tested; this exact rebuilt core has not been gameplay-tested",
+    "No independent new gameplay session during packaging",
     "Two-console System Link gameplay is unverified",
     "Long-session stability and all-game compatibility are not established"
   ]

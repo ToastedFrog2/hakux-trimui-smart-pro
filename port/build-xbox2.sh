@@ -8,7 +8,7 @@ export ZIG="${ZIG:-$(command -v zig || true)}"
 STRIP_TOOL="${TRIMUI_STRIP:-$(command -v llvm-strip || command -v aarch64-linux-gnu-strip || true)}"
 [ -n "$STRIP_TOOL" ] || { echo 'Set TRIMUI_STRIP to an LLVM or AArch64 strip executable.' >&2; exit 1; }
 df -h .
-for patch in source xbox2 halfscale menu recovery shader-compat memory objects halo2-save frame-skip scale075 powervr-eqdepth vcpu-safe extras profiles cheat-toggle; do
+for patch in source xbox2 halfscale menu recovery shader-compat memory objects halo2-save frame-skip scale075 powervr-eqdepth vcpu-safe stall-fix extras profiles cheat-toggle; do
     python3 "patch-$patch.py"
 done
 cmake -S source/native -B build/core -G Ninja \

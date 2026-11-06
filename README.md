@@ -4,7 +4,9 @@ An experimental original Xbox emulator port for the **original TrimUI Smart Pro
 (TG5040, Cortex-A53, PowerVR GE8300, 1 GiB RAM)**, based on
 [rfandango/hakuX](https://github.com/rfandango/hakuX).
 
-**v0.1.2 — Per-game settings, LAN and screenshots (2026.11.06).**
+**v0.1.3 — Halo 2 glitch update (2026.11.06).**
+
+Updates the Halo 2 glitch fixes; includes the v0.1.2 features below.
 Controller mapping, picture options, display frame skip, render scale and
 LAN now save separately for each game and certificate version. The menu
 adds **LAN: Connections on the network**, **Mods and Cheats** support for
@@ -29,7 +31,7 @@ and reads games from the existing **`Roms/XBOX`** folder.
 
 ## Download and install
 
-1. Download [the ready-to-install ZIP](release/xbox-trimui-smart-pro-v0.1.2.zip)
+1. Download [the ready-to-install ZIP](release/xbox-trimui-smart-pro-v0.1.3.zip)
    using the file page's download button, or from this repository's Releases.
 2. Exit any game and power off the handheld. Put its SD card in a computer.
 3. Extract the ZIP. Copy its **`Data`** and **`Emus`** folders into the SD card's
@@ -147,7 +149,7 @@ The stripped core is `port/dist/hakux.aarch64`. Pinned source revisions and
 hashes are in `sources/SOURCES.json`. Preserve the bundled licenses when
 distributing modified builds.
 
-To build the v0.1.2 installer around the rebuilt core and retained v0.1.1
+To build the current installer around the rebuilt core and retained v0.1.1
 runtime files:
 
 ```sh

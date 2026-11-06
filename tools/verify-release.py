@@ -30,7 +30,7 @@ def audit(name,data,upstream=False):
  scanned+=1
  assert not any(p.search(data) for p in credential_re),'Credential marker requires review: '+name
  assert not any(p.search(data) for p in (private_re[1:] if upstream else private_re)),'Personal path/identity marker requires review: '+name
-m=json.loads((root/'release/BUILD.json').read_text());assert m['version']=='0.1.2'
+m=json.loads((root/'release/BUILD.json').read_text());assert m['version'] in {'0.1.2','0.1.3'}
 path=root/'release'/m['install_zip_name'];assert sha(path.read_bytes())==m['install_zip_sha256']
 for line in (root/'release/SHA256SUMS').read_text().splitlines():
  digest,name=line.split('  ',1);assert sha((root/'release'/name).read_bytes())==digest,name
@@ -62,6 +62,8 @@ with zipfile.ZipFile(path) as z:
 assert m['automatic_swap']['size_mib']==512 and m['fresh_install_defaults']['lan']=='off'
 assert m['menu_extras']['game_specific_files_included'] is False
 assert m['controller_mapping']['global'] is False
+if m['version']=='0.1.3':
+ assert m['halo2_update']=={'texture_limit':768,'upload_arena_mib':32,'readback_buffer_mib':4,'streaming_rearm_limit':8,'published_clock_read_budget':64,'installer_changes_system_swappiness':False}
 for report in ['HOST-VALIDATION.json','DEVICE-VALIDATION.json']:
  assert json.loads((root/'release'/report).read_text())['core_sha256']==m['core_sha256']
 for name,digest in m['port_source_sha256'].items():assert sha((root/'port'/name).read_bytes())==digest,name

@@ -44,7 +44,7 @@ python3 port/verify-menu.py
 python3 tools/package-menu-release.py --core port/dist/hakux.aarch64
 ```
 
-This writes `release/xbox-trimui-smart-pro-v0.1.2.zip` and its checksums. It includes
+This writes `release/xbox-trimui-smart-pro-v0.1.3.zip` and its checksums. It includes
 one Xbox emulator, no ROMs, and no saved user settings. To test the underlying
 UDP backend on a Linux host, compile `port/tests/lan.c` with `-UNDEBUG` and
 `-Iport/source`, then run it; this test exchanges frames with a local UDP peer.
