@@ -41,9 +41,9 @@ and reads games from the existing **`Roms/XBOX`** folder.
 
 ## Controls and settings
 
-![Xbox settings menu from an earlier build](docs/images/xbox-settings-earlier.png)
+![Xbox settings menu with per-game settings, controller mapping and screenshot options](docs/images/xbox-settings.png)
 
-*Earlier menu preview; v0.1.2 adds scrolling, LAN, per-game settings, Mods and Cheats, and Take Screenshot.*
+*v0.1.2 settings menu, scrolled down to show Controller Mapping, Mods and Cheats, and Take Screenshot.*
 
 | Control | Action |
 | --- | --- |
